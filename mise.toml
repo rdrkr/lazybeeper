@@ -1,0 +1,33 @@
+# Copyright (c) 2026 lazybeeper by Ronen Druker.
+
+[tools]
+go = "1.25"
+
+[tasks.fmt]
+description = "Format code with gofumpt"
+run = "go tool gofumpt -w ."
+
+[tasks.lint]
+description = "Run golangci-lint with auto-fix"
+run = "go tool golangci-lint run --fix ./..."
+
+[tasks.test]
+description = "Run all tests"
+run = "go test ./..."
+
+[tasks.build]
+description = "Build the project"
+depends = ["fmt", "lint"]
+run = "go build ./..."
+
+[tasks.check]
+description = "Full check: format, lint, test, build"
+depends = ["fmt", "lint", "test", "build"]
+
+[tasks.run]
+description = "Run the application (mock mode by default)"
+run = "go run ."
+
+[tasks.clean]
+description = "Clean build artifacts"
+run = "go clean ./..."
