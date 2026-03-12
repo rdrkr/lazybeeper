@@ -1,7 +1,7 @@
 # lazybeeper
 
 A terminal user interface (TUI) chat client for the [Beeper](https://beeper.com) messaging platform,
-built with [Bubble Tea](https://github.com/charmbracelet/bubbletea).
+built with [Ink](https://github.com/vadimdemedes/ink) (React for CLIs).
 
 ## Screenshots
 
@@ -10,47 +10,61 @@ _Coming soon._
 ## Installation
 
 ```bash
-go install github.com/rdrkr/lazybeeper@latest
-```
-
-Or build from source:
-
-```bash
 git clone https://github.com/rdrkr/lazybeeper.git
 cd lazybeeper
-go build .
+bun install
 ```
 
 ## Usage
 
 ```bash
-# With API token (live mode)
-lazybeeper --token <your-beeper-token>
+# Mock mode (no token required)
+bunx tsx src/index.tsx --token ""
 
-# With environment variable
-export BEEPER_TOKEN=<your-beeper-token>
-lazybeeper
+# With API token (live mode)
+bunx tsx src/index.tsx --token <your-beeper-token>
 
 # Custom API URL
-lazybeeper --url http://localhost:23373
+bunx tsx src/index.tsx --token <token> --url http://localhost:23373
 
-# Mock mode (no token required)
-lazybeeper
+# Select a theme
+bunx tsx src/index.tsx --token "" --theme dracula
 ```
 
 ### Environment Variables
 
-| Variable       | Description                     | Default                     |
-| -------------- | ------------------------------- | --------------------------- |
-| `BEEPER_TOKEN` | Beeper API authentication token | _(none, enables mock mode)_ |
-| `BEEPER_URL`   | Beeper Desktop API base URL     | `http://localhost:23373`    |
+| Variable           | Description                     | Default                     |
+| ------------------ | ------------------------------- | --------------------------- |
+| `BEEPER_TOKEN`     | Beeper API authentication token | _(none, enables mock mode)_ |
+| `BEEPER_URL`       | Beeper Desktop API base URL     | `http://localhost:23373`    |
+| `LAZYBEEPER_THEME` | Color theme name                | `catppuccin-mocha`          |
 
 ### CLI Flags
 
-| Flag      | Description                          |
-| --------- | ------------------------------------ |
-| `--token` | API token (overrides `BEEPER_TOKEN`) |
-| `--url`   | Base URL (overrides `BEEPER_URL`)    |
+| Flag      | Description                              |
+| --------- | ---------------------------------------- |
+| `--token` | API token (overrides `BEEPER_TOKEN`)     |
+| `--url`   | Base URL (overrides `BEEPER_URL`)        |
+| `--theme` | Theme name (overrides `LAZYBEEPER_THEME`)|
+
+### Themes
+
+Built-in themes: `catppuccin-mocha` (default), `catppuccin-macchiato`, `catppuccin-frappe`,
+`catppuccin-latte`, `tokyo-night`, `tokyo-night-storm`, `dracula`, `nord`, `gruvbox-dark`, `one-dark`.
+
+Press `t` at runtime to open the theme selector. Changes are persisted to the config file.
+
+### Configuration File
+
+lazybeeper stores persistent settings in a TOML file at
+`$XDG_CONFIG_HOME/lazybeeper/config.toml` (defaults to `~/.config/lazybeeper/config.toml`).
+The file is created automatically on first run.
+
+```toml
+theme = "catppuccin-mocha"
+```
+
+Press `r` to reload the config file at runtime.
 
 ## Keybindings
 
@@ -64,6 +78,8 @@ lazybeeper
 | `h` / `l`           | Left / right panel |
 | `/`                 | Search chats       |
 | `?`                 | Help popup         |
+| `t`                 | Theme selector     |
+| `r`                 | Reload config      |
 
 ### Lists (Accounts / Chats)
 
@@ -98,30 +114,43 @@ lazybeeper
 
 ## Architecture
 
-```bash
+```text
 lazybeeper/
-├── main.go              # Entry point
-├── data/                # Beeper Desktop API client and adapters
-│   ├── mock/            # Mock data for development
-│   └── poller.go        # Polling with idle backoff
-├── domain/              # Pure domain types and Repository interface
-│   ├── config/          # Configuration (env vars + CLI flags)
-│   └── textutil/        # String utilities
-└── ui/                  # Bubble Tea UI layer
-    ├── app.go           # Root model (thin routing shell)
-    ├── layout.go        # Responsive layout calculation
-    ├── viewmodel/       # Business logic (data fetching, state)
-    ├── shared/          # Shared types, styles, keybindings
-    ├── panel/           # Panel components
-    └── popup/           # Overlay dialogs
+├── src/
+│   ├── index.tsx           # Entry point
+│   ├── domain/             # Pure types, config, text utilities
+│   │   ├── types.ts        # Account, Chat, Message interfaces
+│   │   ├── repository.ts   # Repository interface
+│   │   ├── config.ts       # Configuration (env vars + CLI flags)
+│   │   ├── config-file.ts  # TOML config file (XDG_CONFIG_HOME)
+│   │   └── textutil.ts     # String utilities
+│   ├── data/               # API client and mock data
+│   │   ├── client.ts       # Beeper Desktop API client
+│   │   ├── mock/           # Mock data for development
+│   │   └── poller.ts       # Polling with idle backoff
+│   └── ui/                 # Ink UI layer
+│       ├── app.tsx          # Root component (keyboard routing)
+│       ├── layout.ts        # Responsive layout calculation
+│       ├── terminal.ts      # Synchronized output (anti-flicker)
+│       ├── theme/           # Theme system (10 built-in themes)
+│       ├── viewmodel/       # State, actions, keybindings, reducer
+│       ├── panel/           # Panel components
+│       └── popup/           # Popup dialogs
+├── tests/                   # Test files (mirrors src structure)
+├── package.json
+├── tsconfig.json
+├── eslint.config.mjs
+└── vitest.config.ts
 ```
 
 ### Key Patterns
 
-- **MVVM**: UI delegates to ViewModel for business logic
+- **MVVM via useReducer**: UI delegates to reducer for state logic
 - **Repository interface**: Decouples data access from UI
-- **Message-based state**: Panels emit messages instead of mutating state directly
-- **Adaptive polling**: Backs off when no changes are detected
+- **Discriminated unions**: Type-safe action dispatch (replaces Go's tea.Msg)
+- **React.memo**: Prevents unnecessary re-renders for flicker-free tmux support
+- **Synchronized output**: DEC 2026 markers for atomic terminal frame updates
+- **Theme system**: 10 built-in themes with React context
 
 ## Prerequisites
 
@@ -130,8 +159,6 @@ Install [mise](https://github.com/jdx/mise) for task running:
 ```bash
 brew install mise
 ```
-
-See the [mise documentation](https://mise.jdx.dev/getting-started.html) for other installation methods.
 
 ## Development
 
@@ -156,6 +183,12 @@ mise run check
 
 # Clean build artifacts
 mise run clean
+
+# Check for outdated packages
+mise run outdated
+
+# Upgrade all dependencies
+mise run upgrade
 ```
 
 ## Contributing

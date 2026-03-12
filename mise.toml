@@ -1,33 +1,45 @@
 # Copyright (c) 2026 lazybeeper by Ronen Druker.
 
 [tools]
-go = "1.25"
+bun = "latest"
 
 [tasks.fmt]
-description = "Format code with gofumpt"
-run = "go tool gofumpt -w ."
+description = "Format code with Prettier"
+run = "bunx prettier --write 'src/**/*.{ts,tsx}' 'tests/**/*.{ts,tsx}'"
 
 [tasks.lint]
-description = "Run golangci-lint with auto-fix"
-run = "go tool golangci-lint run --fix ./..."
+description = "Run ESLint with auto-fix"
+run = "bunx eslint 'src/**/*.{ts,tsx}' 'tests/**/*.{ts,tsx}' --fix"
 
 [tasks.test]
-description = "Run all tests"
-run = "go test ./..."
+description = "Run all tests with coverage"
+run = "bunx vitest run --coverage"
 
 [tasks.build]
 description = "Build the project"
-depends = ["fmt", "lint"]
-run = "go build ./..."
+run = "bunx tsc"
 
 [tasks.check]
-description = "Full check: format, lint, test, build"
-depends = ["fmt", "lint", "test", "build"]
+description = "Full check: verify formatting, lint, test with coverage, build"
+run = """
+bunx prettier --check 'src/**/*.{ts,tsx}' 'tests/**/*.{ts,tsx}' && \
+bunx eslint 'src/**/*.{ts,tsx}' 'tests/**/*.{ts,tsx}' && \
+bunx vitest run --coverage && \
+bunx tsc
+"""
 
 [tasks.run]
 description = "Run the application (mock mode by default)"
-run = "go run ."
+run = "bunx tsx src/index.tsx --token ''"
 
 [tasks.clean]
 description = "Clean build artifacts"
-run = "go clean ./..."
+run = "rm -rf dist coverage tsconfig.tsbuildinfo"
+
+[tasks.outdated]
+description = "List outdated npm packages"
+run = "bunx npm-check-updates"
+
+[tasks.upgrade]
+description = "Upgrade all dependencies and save to package.json"
+run = "bunx npm-check-updates -u --dep prod,dev,optional && bun install"

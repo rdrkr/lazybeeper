@@ -6,76 +6,76 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ```bash
 # Build
-go build ./...
+bunx tsc
 
 # Run (mock mode — no token required)
-go run . --token ""
+bunx tsx src/index.tsx --token ""
 
 # Run with live API
-go run . --token <token> --url http://localhost:23373
+bunx tsx src/index.tsx --token <token> --url http://localhost:23373
 
 # Format (required before committing)
-go tool gofumpt -w .
+bunx prettier --write 'src/**/*.{ts,tsx}' 'tests/**/*.{ts,tsx}'
 
 # Lint
-go tool golangci-lint run ./...
+bunx eslint 'src/**/*.{ts,tsx}' 'tests/**/*.{ts,tsx}'
+
+# Test
+bunx vitest run
 
 # Full check (fmt + lint + test + build)
 mise run check
 ```
 
-Tools (`gofumpt`, `golangci-lint`) are declared as `tool` directives in `go.mod` and invoked via `go tool`.
-No separate installation needed; `go mod download` fetches them automatically.
-
 Task runner: [mise](https://github.com/jdx/mise) — see `mise.toml` for available tasks
-(`fmt`, `lint`, `test`, `build`, `check`, `run`, `clean`).
+(`fmt`, `lint`, `test`, `build`, `check`, `run`, `clean`, `outdated`, `upgrade`).
 
 ## Architecture
 
-**MVVM layered architecture:**
+**MVVM layered architecture (React + useReducer):**
 
-```bash
-main.go → domain.Repository → ui.App → ui/viewmodel.AppViewModel → domain.Repository
+```text
+index.tsx → Repository → App → useAppState (reducer) → Repository
 ```
 
-- **`domain/types.go`** — Pure Go structs (`Account`, `Chat`, `Message`) and the `Repository` interface.
-  No SDK imports. Everything else depends on this.
-- **`domain/config/`** — Application configuration loading from env vars and CLI flags.
-- **`domain/textutil/`** — String manipulation and formatting utilities.
-- **`ui/viewmodel/app.go`** — All business logic: fetches data via `Repository`, manages polling,
-  returns `tea.Cmd` values. Holds `ActiveAccountID`, `ActiveChatID`, `AllChats`.
-- **`ui/app.go`** — Thin routing shell: receives `tea.Msg`, delegates commands to `viewmodel.AppViewModel`,
-  updates panels with results.
-- **`data/`** — Beeper Desktop API client implementing `domain.Repository`. `adapter.go`
-  converts SDK types → domain types.
-- **`data/mock/`** — Mock `domain.Repository` implementation with hardcoded data;
+- **`domain/types.ts`** — Pure TypeScript interfaces (`Account`, `Chat`, `Message`) and the
+  `Repository` interface. No framework imports. Everything else depends on this.
+- **`domain/config.ts`** — Configuration loading from env vars and CLI flags.
+- **`domain/config-file.ts`** — TOML config file management with XDG_CONFIG_HOME support.
+- **`domain/textutil.ts`** — String manipulation and formatting utilities.
+- **`ui/viewmodel/use-app-state.ts`** — All business logic: fetches data via `Repository`, manages
+  polling via `useEffect`, state via `useReducer`. The `appReducer` handles all `AppAction` types.
+- **`ui/viewmodel/context.ts`** — `PanelFocus` enum and panel navigation helpers.
+- **`ui/viewmodel/messages.ts`** — `AppAction` discriminated union and `ChatAction` enum.
+- **`ui/viewmodel/keys.ts`** — Keybinding detection functions.
+- **`ui/app.tsx`** — Thin routing shell: receives keyboard input via `useInput`, delegates to reducer,
+  renders panels and popups. Wraps everything in `ThemeProvider`.
+- **`ui/theme/`** — Theme system with 10 built-in themes, React context, and `useTheme()` hook.
+- **`ui/terminal.ts`** — Synchronized output (DEC 2026) + clear-to-home replacement for flicker-free
+  rendering in tmux.
+- **`data/client.ts`** — Beeper Desktop API client implementing `Repository`.
+- **`data/mock/`** — Mock `Repository` implementation with hardcoded data;
   used when no `BEEPER_TOKEN` is set.
 
 ## Key Patterns
 
-**Message-based state (immutability):** Panels never mutate shared state directly. Instead they emit typed
-messages (e.g., `ToggleMuteMsg{ChatID}`, `TogglePinMsg{ChatID}`), which `ui/app.go` handles by producing new
-slices via `vm.ToggleMute()` / `vm.TogglePin()`.
+**Discriminated union actions:** Components never mutate shared state directly. Instead they dispatch typed
+actions (e.g., `{ type: "toggle_mute", chatId }`) which the `appReducer` handles immutably.
 
-**Typed enums over strings:** `shared.ChatAction` (not strings) is used for confirm dialog actions.
-`shared.PanelFocus` (not ints) tracks which panel has focus.
+**Typed enums over strings:** `ChatAction` enum for confirm dialog actions.
+`PanelFocus` enum tracks which panel has focus.
 
-**Cached keymaps:** All panels and popups store `keys shared.KeyMap` (set once in the constructor via
-`shared.DefaultKeyMap()`). Never call `shared.DefaultKeyMap()` inside `Update()`.
+**React.memo:** All panel components are memoized to prevent unnecessary re-renders when
+sibling state changes (critical for flicker-free tmux support).
 
-**Polling:** `data.Poller` in `ui/viewmodel.AppViewModel` manages chat/message tick intervals with idle
-backoff. `ui/app.go` dispatches `data.TickMsg` to `vm.HandleTick()`.
+**Polling with idle backoff:** `Poller` class manages chat/message tick intervals.
+`useAppState` sets up `setInterval` effects that clean up on dependency changes.
 
-**Mock send message:** When `repo.UseMock()` is true, `ui/viewmodel.SendMessage()` appends to
-`mock.Messages()` locally rather than calling the API.
-
-## Module
-
-`github.com/rdrkr/lazybeeper` (Go 1.25)
+**Theme system:** 10 built-in themes via React context. Components use `useTheme()` hook.
+Theme is selected via `--theme` flag, `LAZYBEEPER_THEME` env var, or config file.
 
 ## Code Style
 
-All exported and unexported types, functions, methods, and constants require doc comments (enforced by
-`revive` and `godoclint`). Doc comments must start with the symbol name. Use `gofumpt` for formatting
-(stricter than `gofmt`). Variable names must be at least 3 characters — no single-letter or two-letter
-names (enforced by `varnamelen`).
+All exported and unexported types, functions, methods, and constants require JSDoc comments.
+Use Prettier for formatting. ESLint enforces strict TypeScript rules including
+`strictTypeChecked` and `stylisticTypeChecked` configs. Explicit return types required on all functions.

@@ -29,6 +29,7 @@
     "unmute",
     "varnamelen",
     "viewmodel",
+    "vitest",
     "wrapcheck"
   ]
 }

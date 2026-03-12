@@ -1,0 +1,44 @@
+{
+  "name": "lazybeeper",
+  "version": "1.0.0",
+  "description": "TUI chat application powered by the Beeper Desktop API",
+  "type": "module",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "tsx src/index.tsx",
+    "start:mock": "tsx src/index.tsx --token ''",
+    "dev": "tsx watch src/index.tsx",
+    "lint": "eslint 'src/**/*.{ts,tsx}' 'tests/**/*.{ts,tsx}'",
+    "lint:fix": "eslint 'src/**/*.{ts,tsx}' 'tests/**/*.{ts,tsx}' --fix",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "check": "bun run lint && bun run test && bun run build",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "ink": "^6.8.0",
+    "ink-text-input": "^6.0.0",
+    "react": "^19.2.4",
+    "smol-toml": "^1.6.0"
+  },
+  "devDependencies": {
+    "@types/node": "^25.5.0",
+    "@types/react": "^19.2.14",
+    "@typescript-eslint/eslint-plugin": "^8.57.0",
+    "@typescript-eslint/parser": "^8.57.0",
+    "@vitest/coverage-v8": "^4.1.0",
+    "eslint": "^10.0.3",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-jsdoc": "^62.8.0",
+    "eslint-plugin-react": "^7.37.5",
+    "eslint-plugin-react-hooks": "^7.0.1",
+    "ink-testing-library": "^4.0.0",
+    "prettier": "^3.8.1",
+    "tsx": "^4.21.0",
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.57.0",
+    "vitest": "^4.1.0"
+  }
+}

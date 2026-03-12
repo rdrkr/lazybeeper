@@ -9,6 +9,7 @@ exclude: |
     coverage/|
     dist/|
     log\.txt|
+    node_modules/|
     temp/|
     test-results/
   )
@@ -19,13 +20,14 @@ repos:
     hooks:
       - id: gitleaks
 
-  # Copyright header enforcement (go, mod)
+  # Copyright header enforcement (ts, tsx)
   - repo: https://github.com/Lucas-C/pre-commit-hooks
     rev: v1.5.6
     hooks:
       - id: insert-license
-        name: Check copyright headers (go, mod)
-        files: \.(go|mod)$
+        name: Check copyright headers (ts, tsx)
+        files: \.(ts|tsx)$
+        exclude: node_modules/
         args:
           - --license-filepath
           - .copyright-header.txt
@@ -34,7 +36,7 @@ repos:
           - --allow-past-years
           - --detect-license-in-X-top-lines=3
 
-  # Copyright header enforcement (yaml, md)
+  # Copyright header enforcement (yaml)
   - repo: https://github.com/Lucas-C/pre-commit-hooks
     rev: v1.5.6
     hooks:
