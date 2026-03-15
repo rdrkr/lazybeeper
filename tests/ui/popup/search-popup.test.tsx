@@ -43,7 +43,7 @@ describe("SearchPopup", () => {
         height={24}
       />,
     );
-    expect(rendered.lastFrame()).toContain("Search Chats");
+    expect(rendered.lastFrame()).toContain("Search");
   });
 
   it("renders filtered results", async () => {
@@ -112,7 +112,7 @@ describe("SearchPopup", () => {
         height={24}
       />,
     );
-    expect(rendered.lastFrame()).toContain("\u25b8");
+    expect(rendered.lastFrame()).toContain("\u25cf");
   });
 
   it("renders hints text", async () => {
@@ -129,8 +129,7 @@ describe("SearchPopup", () => {
         height={24}
       />,
     );
-    expect(rendered.lastFrame()).toContain("Enter: select");
-    expect(rendered.lastFrame()).toContain("Esc: close");
+    expect(rendered.lastFrame()).toContain("enter select");
   });
 
   it("shows overflow count for many results", async () => {

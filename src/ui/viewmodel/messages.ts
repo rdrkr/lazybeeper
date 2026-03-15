@@ -8,6 +8,8 @@ export enum ChatAction {
   Archive = "archive",
   /** Unarchives a chat. */
   Unarchive = "unarchive",
+  /** Resets configuration to defaults. */
+  ResetConfig = "reset_config",
 }
 
 /** Union type for all application actions (equivalent to Go's tea.Msg types). */

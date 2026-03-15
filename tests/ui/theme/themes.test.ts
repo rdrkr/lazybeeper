@@ -10,7 +10,7 @@ import {
 
 describe("THEMES", () => {
   it("contains the expected number of built-in themes", () => {
-    expect(Object.keys(THEMES).length).toBe(10);
+    expect(Object.keys(THEMES).length).toBe(14);
   });
 
   it("has valid theme objects for every entry", () => {
@@ -47,6 +47,13 @@ describe("THEMES", () => {
     expect(THEMES["gruvbox-dark"]).toBeDefined();
     expect(THEMES["one-dark"]).toBeDefined();
   });
+
+  it("includes everforest, kanagawa, flexoki, monokai", () => {
+    expect(THEMES.everforest).toBeDefined();
+    expect(THEMES.kanagawa).toBeDefined();
+    expect(THEMES.flexoki).toBeDefined();
+    expect(THEMES.monokai).toBeDefined();
+  });
 });
 
 describe("DEFAULT_THEME", () => {
@@ -66,7 +73,7 @@ describe("getThemeNames", () => {
     expect(names).toContain("dracula");
     expect(names).toContain("nord");
     expect(names).toContain("tokyo-night");
-    expect(names.length).toBe(10);
+    expect(names.length).toBe(14);
   });
 });
 

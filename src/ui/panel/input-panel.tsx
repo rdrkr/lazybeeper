@@ -3,6 +3,8 @@
 import React from "react";
 import { TextAttributes } from "@opentui/core";
 import { useTheme } from "../theme/context.js";
+import { useStyle } from "../style/context.js";
+import { Style } from "../../domain/config-file.js";
 
 /** Props for the InputPanel component. */
 interface InputPanelProps {
@@ -36,7 +38,41 @@ export const InputPanel = React.memo(function InputPanel({
   onSubmit,
 }: InputPanelProps): React.ReactNode {
   const theme = useTheme();
+  const style = useStyle();
+  const isModern = style === Style.Modern;
   const borderColor = focused ? theme.borderActive : theme.border;
+
+  if (isModern) {
+    return (
+      <box
+        flexDirection="row"
+        width={width}
+        height={height}
+        backgroundColor={theme.backgroundPanel}
+      >
+        <text fg={focused ? theme.primary : theme.border}>{"\u2502"}</text>
+        <box flexDirection="column" width={width - 1}>
+          <text attributes={TextAttributes.BOLD} fg={theme.primary}>
+            {" Input [4]"}
+          </text>
+          <box>
+            {focused ? (
+              <input
+                focused={focused}
+                value={value}
+                onInput={onInput}
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-assignment
+                onSubmit={onSubmit as any}
+                placeholder="Type a message..."
+              />
+            ) : (
+              <text fg={theme.textMuted}> {value || "Type a message..."}</text>
+            )}
+          </box>
+        </box>
+      </box>
+    );
+  }
 
   return (
     <box

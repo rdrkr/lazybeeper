@@ -67,7 +67,7 @@ export const StatusBar = React.memo(function StatusBar({
   const activeError = errorMessage && !isErrorExpired ? errorMessage : "";
 
   const leftParts = [
-    { key: "Tab", desc: "switch" },
+    { key: "tab", desc: "switch" },
     { key: "j/k", desc: "nav" },
     { key: "/", desc: "search" },
     { key: "c", desc: "config" },
@@ -81,7 +81,7 @@ export const StatusBar = React.memo(function StatusBar({
   return (
     <box width={width} height={1} flexDirection="row">
       <box flexGrow={1}>
-        <text bg={theme.statusBarBackground}>
+        <text>
           {" "}
           {leftParts.map((part, idx) => (
             <React.Fragment key={part.key}>
@@ -95,7 +95,7 @@ export const StatusBar = React.memo(function StatusBar({
         </text>
       </box>
       <box>
-        <text bg={theme.statusBarBackground}>
+        <text>
           {activeError ? (
             <span attributes={TextAttributes.BOLD} fg={theme.textError}>
               {"\u26a0 "}
@@ -107,7 +107,12 @@ export const StatusBar = React.memo(function StatusBar({
                 {modeLabel}
               </span>
               <span fg={theme.borderSubtle}>{" \u2502 "}</span>
-              {chatName && <span fg={theme.textMuted}>{chatName} </span>}
+              {chatName && (
+                <>
+                  <span fg={theme.textMuted}>{chatName}</span>
+                  <span fg={theme.borderSubtle}>{" \u2502 "}</span>
+                </>
+              )}
               <span fg={theme.statusBarText}>{panelFocusName(focus)}</span>
             </>
           )}{" "}

@@ -72,9 +72,12 @@ export function SearchPopup({
         width={boxWidth}
         height={boxHeight}
       >
-        <text attributes={TextAttributes.BOLD} fg={theme.primary}>
-          Search Chats
-        </text>
+        <box flexDirection="row" justifyContent="space-between" width={boxWidth - 6}>
+          <text attributes={TextAttributes.BOLD} fg={theme.primary}>
+            Search
+          </text>
+          <text fg={theme.textMuted}>esc</text>
+        </box>
         <text>{""}</text>
         <input value={query} onChange={onQueryChange} placeholder="Search chats..." />
         <text>{""}</text>
@@ -83,7 +86,7 @@ export function SearchPopup({
         ) : (
           filtered.slice(0, MAX_RESULTS).map((chat, idx) => {
             const isSelected = idx === cursor;
-            const indicator = isSelected ? "\u25b8 " : "  ";
+            const indicator = isSelected ? "\u25cf " : "  ";
             const color = isSelected ? theme.selectedText : theme.textMuted;
 
             return (
@@ -107,7 +110,7 @@ export function SearchPopup({
           </text>
         )}
         <text>{""}</text>
-        <text fg={theme.textMuted}>{"Enter: select  Esc: close  \u2191/\u2193: navigate"}</text>
+        <text fg={theme.textMuted}>{"enter select  \u2191/\u2193 navigate"}</text>
       </box>
     </box>
   );

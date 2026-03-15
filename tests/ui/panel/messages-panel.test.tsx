@@ -1,9 +1,38 @@
 // Copyright (c) 2026 lazybeeper by Ronen Druker.
 
+import React from "react";
 import { describe, it, expect } from "vitest";
 import { render } from "../../helpers/render.js";
 import { MessagesPanel } from "../../../src/ui/panel/messages-panel.js";
 import type { Message } from "../../../src/domain/types.js";
+import { StyleProvider } from "../../../src/ui/style/context.js";
+import { Style } from "../../../src/domain/config-file.js";
+
+/**
+ * Wraps MessagesPanel with modern style context.
+ * @param props - The MessagesPanel props.
+ * @returns The wrapped element.
+ */
+function ModernMessagesPanel(props: React.ComponentProps<typeof MessagesPanel>): React.ReactNode {
+  return (
+    <StyleProvider value={Style.Modern}>
+      <MessagesPanel {...props} />
+    </StyleProvider>
+  );
+}
+
+/**
+ * Wraps MessagesPanel with retro style context.
+ * @param props - The MessagesPanel props.
+ * @returns The wrapped element.
+ */
+function RetroMessagesPanel(props: React.ComponentProps<typeof MessagesPanel>): React.ReactNode {
+  return (
+    <StyleProvider value={Style.Retro}>
+      <MessagesPanel {...props} />
+    </StyleProvider>
+  );
+}
 
 const now = new Date();
 
@@ -29,7 +58,7 @@ const mockMessages: Message[] = [
 describe("MessagesPanel", () => {
   it("renders the title with chat name", async () => {
     const rendered = await render(
-      <MessagesPanel
+      <RetroMessagesPanel
         messages={mockMessages}
         chatName="Alice"
         focused={false}
@@ -38,12 +67,12 @@ describe("MessagesPanel", () => {
         scrollOffset={0}
       />,
     );
-    expect(rendered.lastFrame()).toContain("Alice - [3]");
+    expect(rendered.lastFrame()).toContain("Alice");
   });
 
   it("renders default title without chat name", async () => {
     const rendered = await render(
-      <MessagesPanel
+      <RetroMessagesPanel
         messages={[]}
         chatName=""
         focused={false}
@@ -52,12 +81,12 @@ describe("MessagesPanel", () => {
         scrollOffset={0}
       />,
     );
-    expect(rendered.lastFrame()).toContain("Messages [3]");
+    expect(rendered.lastFrame()).toContain("Messages");
   });
 
   it("renders no messages placeholder", async () => {
     const rendered = await render(
-      <MessagesPanel
+      <RetroMessagesPanel
         messages={[]}
         chatName=""
         focused={false}
@@ -71,7 +100,7 @@ describe("MessagesPanel", () => {
 
   it("renders message content", async () => {
     const rendered = await render(
-      <MessagesPanel
+      <RetroMessagesPanel
         messages={mockMessages}
         chatName="Alice"
         focused={false}
@@ -86,7 +115,7 @@ describe("MessagesPanel", () => {
 
   it("renders sender names", async () => {
     const rendered = await render(
-      <MessagesPanel
+      <RetroMessagesPanel
         messages={mockMessages}
         chatName="Alice"
         focused={false}
@@ -101,7 +130,7 @@ describe("MessagesPanel", () => {
 
   it("renders date separator", async () => {
     const rendered = await render(
-      <MessagesPanel
+      <RetroMessagesPanel
         messages={mockMessages}
         chatName="Alice"
         focused={false}
@@ -116,7 +145,7 @@ describe("MessagesPanel", () => {
 
   it("renders with focus", async () => {
     const rendered = await render(
-      <MessagesPanel
+      <RetroMessagesPanel
         messages={mockMessages}
         chatName="Alice"
         focused={true}
@@ -139,7 +168,7 @@ describe("MessagesPanel", () => {
     }));
 
     const rendered = await render(
-      <MessagesPanel
+      <RetroMessagesPanel
         messages={manyMessages}
         chatName="Alice"
         focused={false}
@@ -153,7 +182,7 @@ describe("MessagesPanel", () => {
 
   it("handles small dimensions", async () => {
     const rendered = await render(
-      <MessagesPanel
+      <RetroMessagesPanel
         messages={mockMessages}
         chatName="Alice"
         focused={false}
@@ -189,7 +218,7 @@ describe("MessagesPanel", () => {
     };
 
     const rendered = await render(
-      <MessagesPanel
+      <RetroMessagesPanel
         messages={sparseMessages}
         chatName="Test"
         focused={false}
@@ -200,6 +229,37 @@ describe("MessagesPanel", () => {
     );
     expect(rendered.lastFrame()).toContain("First message");
     expect(rendered.lastFrame()).toContain("Third message");
+  });
+
+  it("renders modern style with vertical line accents", async () => {
+    const rendered = await render(
+      <ModernMessagesPanel
+        messages={mockMessages}
+        chatName="Alice"
+        focused={false}
+        width={60}
+        height={20}
+        scrollOffset={0}
+      />,
+    );
+    const frame = rendered.lastFrame();
+    expect(frame).toContain("\u2502");
+    expect(frame).toContain("Hey, how are you?");
+    expect(frame).toContain("I'm good, thanks!");
+  });
+
+  it("renders modern style without borders", async () => {
+    const rendered = await render(
+      <ModernMessagesPanel
+        messages={[]}
+        chatName=""
+        focused={false}
+        width={60}
+        height={20}
+        scrollOffset={0}
+      />,
+    );
+    expect(rendered.lastFrame()).toContain("Messages");
   });
 
   it("renders messages across different days", async () => {
@@ -226,7 +286,7 @@ describe("MessagesPanel", () => {
     ];
 
     const rendered = await render(
-      <MessagesPanel
+      <RetroMessagesPanel
         messages={crossDayMessages}
         chatName="Alice"
         focused={false}

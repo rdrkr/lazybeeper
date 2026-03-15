@@ -403,6 +403,166 @@ const oneDark: Theme = {
 };
 
 /* ------------------------------------------------------------------ */
+/*  Everforest                                                        */
+/* ------------------------------------------------------------------ */
+
+/** Everforest — comfortable green-tinted dark theme. */
+const everforest: Theme = {
+  name: "Everforest",
+  background: "#2d353b",
+  backgroundPanel: "#272e33",
+  backgroundElement: "#343f44",
+  text: "#d3c6aa",
+  textMuted: "#859289",
+  textInfo: "#7fbbb3",
+  textError: "#e67e80",
+  textWarning: "#dbbc7f",
+  textSuccess: "#a7c080",
+  border: "#343f44",
+  borderActive: "#a7c080",
+  borderSubtle: "#475258",
+  primary: "#a7c080",
+  secondary: "#d699b6",
+  accent: "#7fbbb3",
+  selectedBackground: "#343f44",
+  selectedText: "#a7c080",
+  cursorIndicator: "#a7c080",
+  connected: "#a7c080",
+  disconnected: "#e67e80",
+  ownMessageName: "#a7c080",
+  otherMessageName: "#7fbbb3",
+  messageText: "#d3c6aa",
+  timestamp: "#859289",
+  dateSeparator: "#475258",
+  statusBarBackground: "#272e33",
+  statusBarText: "#859289",
+  statusBarKey: "#a7c080",
+  unreadBadge: "#dbbc7f",
+  pinnedIndicator: "#dbbc7f",
+  mutedIndicator: "#859289",
+};
+
+/* ------------------------------------------------------------------ */
+/*  Kanagawa                                                          */
+/* ------------------------------------------------------------------ */
+
+/** Kanagawa — Japanese-inspired dark theme with ink tones. */
+const kanagawa: Theme = {
+  name: "Kanagawa",
+  background: "#1f1f28",
+  backgroundPanel: "#16161d",
+  backgroundElement: "#2a2a37",
+  text: "#dcd7ba",
+  textMuted: "#727169",
+  textInfo: "#7e9cd8",
+  textError: "#e82424",
+  textWarning: "#ff9e3b",
+  textSuccess: "#98bb6c",
+  border: "#2a2a37",
+  borderActive: "#7e9cd8",
+  borderSubtle: "#54546d",
+  primary: "#7e9cd8",
+  secondary: "#957fb8",
+  accent: "#7fb4ca",
+  selectedBackground: "#2a2a37",
+  selectedText: "#7e9cd8",
+  cursorIndicator: "#7e9cd8",
+  connected: "#98bb6c",
+  disconnected: "#e82424",
+  ownMessageName: "#98bb6c",
+  otherMessageName: "#7e9cd8",
+  messageText: "#dcd7ba",
+  timestamp: "#727169",
+  dateSeparator: "#54546d",
+  statusBarBackground: "#16161d",
+  statusBarText: "#727169",
+  statusBarKey: "#7e9cd8",
+  unreadBadge: "#ff9e3b",
+  pinnedIndicator: "#e6c384",
+  mutedIndicator: "#727169",
+};
+
+/* ------------------------------------------------------------------ */
+/*  Flexoki                                                           */
+/* ------------------------------------------------------------------ */
+
+/** Flexoki — warm, inky dark theme with natural tones. */
+const flexoki: Theme = {
+  name: "Flexoki",
+  background: "#100f0f",
+  backgroundPanel: "#1c1b1a",
+  backgroundElement: "#282726",
+  text: "#cecdc3",
+  textMuted: "#878580",
+  textInfo: "#4385be",
+  textError: "#af3029",
+  textWarning: "#bc5215",
+  textSuccess: "#66800b",
+  border: "#282726",
+  borderActive: "#878580",
+  borderSubtle: "#343331",
+  primary: "#cecdc3",
+  secondary: "#8b7ec8",
+  accent: "#4385be",
+  selectedBackground: "#282726",
+  selectedText: "#cecdc3",
+  cursorIndicator: "#878580",
+  connected: "#66800b",
+  disconnected: "#af3029",
+  ownMessageName: "#66800b",
+  otherMessageName: "#4385be",
+  messageText: "#cecdc3",
+  timestamp: "#878580",
+  dateSeparator: "#343331",
+  statusBarBackground: "#1c1b1a",
+  statusBarText: "#878580",
+  statusBarKey: "#cecdc3",
+  unreadBadge: "#bc5215",
+  pinnedIndicator: "#ad8301",
+  mutedIndicator: "#878580",
+};
+
+/* ------------------------------------------------------------------ */
+/*  Monokai                                                           */
+/* ------------------------------------------------------------------ */
+
+/** Monokai — classic dark theme with vivid syntax colors. */
+const monokai: Theme = {
+  name: "Monokai",
+  background: "#272822",
+  backgroundPanel: "#1e1f1c",
+  backgroundElement: "#3e3d32",
+  text: "#f8f8f2",
+  textMuted: "#75715e",
+  textInfo: "#66d9ef",
+  textError: "#f92672",
+  textWarning: "#fd971f",
+  textSuccess: "#a6e22e",
+  border: "#3e3d32",
+  borderActive: "#f92672",
+  borderSubtle: "#49483e",
+  primary: "#f92672",
+  secondary: "#ae81ff",
+  accent: "#66d9ef",
+  selectedBackground: "#3e3d32",
+  selectedText: "#f92672",
+  cursorIndicator: "#f92672",
+  connected: "#a6e22e",
+  disconnected: "#f92672",
+  ownMessageName: "#a6e22e",
+  otherMessageName: "#66d9ef",
+  messageText: "#f8f8f2",
+  timestamp: "#75715e",
+  dateSeparator: "#49483e",
+  statusBarBackground: "#1e1f1c",
+  statusBarText: "#75715e",
+  statusBarKey: "#f92672",
+  unreadBadge: "#fd971f",
+  pinnedIndicator: "#e6db74",
+  mutedIndicator: "#75715e",
+};
+
+/* ------------------------------------------------------------------ */
 /*  Theme registry                                                    */
 /* ------------------------------------------------------------------ */
 
@@ -418,6 +578,10 @@ export const THEMES: Record<ThemeName, Theme> = {
   nord: nord,
   "gruvbox-dark": gruvboxDark,
   "one-dark": oneDark,
+  everforest: everforest,
+  kanagawa: kanagawa,
+  flexoki: flexoki,
+  monokai: monokai,
 };
 
 /** The default theme used when none is specified. */

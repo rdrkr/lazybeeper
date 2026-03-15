@@ -7,7 +7,13 @@ import { App } from "./ui/app.js";
 import { loadConfig } from "./domain/config.js";
 import { readConfigFile } from "./domain/config-file.js";
 import { ApiClient } from "./data/client.js";
-import { detectKittyGraphics, isKittySupported, deleteAllImages } from "./ui/kitty.js";
+import {
+  detectKittyGraphics,
+  isKittySupported,
+  deleteAllImages,
+  enableFocusReporting,
+  disableFocusReporting,
+} from "./ui/kitty.js";
 import { resolveTheme } from "./ui/theme/index.js";
 
 /**
@@ -58,6 +64,9 @@ const theme = resolveTheme(config.theme);
 /* Detect Kitty graphics protocol support before the renderer takes over stdin. */
 await detectKittyGraphics();
 
+/* Enable focus reporting so images are cleaned up on tmux window switch. */
+enableFocusReporting();
+
 /* Create OpenTUI renderer — it owns the alternate screen and Ctrl-C handling. */
 const renderer = await createCliRenderer({ exitOnCtrlC: false, useAlternateScreen: true });
 const root = createRoot(renderer);
@@ -77,6 +86,7 @@ renderer.useThread = false;
  * raw mode, kitty keyboard protocol, mouse mode), and exiting the process.
  */
 function quit(): void {
+  disableFocusReporting();
   if (isKittySupported()) {
     deleteAllImages();
   }
@@ -86,5 +96,12 @@ function quit(): void {
 }
 
 root.render(
-  <App repo={client} theme={theme} selectionMode={configFile.selectionMode} onQuit={quit} />,
+  <App
+    repo={client}
+    theme={theme}
+    selectionMode={configFile.selectionMode}
+    chatListStyle={configFile.chatListStyle}
+    style={configFile.style}
+    onQuit={quit}
+  />,
 );

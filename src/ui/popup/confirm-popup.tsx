@@ -61,9 +61,12 @@ export function ConfirmPopup({
         paddingY={1}
         width={boxWidth}
       >
-        <text attributes={TextAttributes.BOLD} fg={theme.textWarning}>
-          Confirm
-        </text>
+        <box flexDirection="row" justifyContent="space-between" width={boxWidth - 6}>
+          <text attributes={TextAttributes.BOLD} fg={theme.textWarning}>
+            Confirm
+          </text>
+          <text fg={theme.textMuted}>esc</text>
+        </box>
         <text>{""}</text>
         <text fg={theme.text}>{message}</text>
         <text>{""}</text>
@@ -93,7 +96,7 @@ export function ConfirmPopup({
           )}
         </box>
         <text>{""}</text>
-        <text fg={theme.textMuted}>{"y/n or \u2190/\u2192 + Enter"}</text>
+        <text fg={theme.textMuted}>{"y/n  \u2190/\u2192 + enter"}</text>
       </box>
     </box>
   );

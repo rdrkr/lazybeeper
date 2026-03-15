@@ -70,15 +70,18 @@ export function ThemePopup({
         width={boxWidth}
         height={boxHeight}
       >
-        <text attributes={TextAttributes.BOLD} fg={theme.primary}>
-          Select Theme
-        </text>
+        <box flexDirection="row" justifyContent="space-between" width={boxWidth - 6}>
+          <text attributes={TextAttributes.BOLD} fg={theme.primary}>
+            Themes
+          </text>
+          <text fg={theme.textMuted}>esc</text>
+        </box>
         <text>{""}</text>
         {visible.map((name, idx) => {
           const realIdx = start + idx;
           const isSelected = realIdx === cursor;
           const isActive = THEMES[name].name === activeTheme;
-          const indicator = isSelected ? "\u25b8 " : "  ";
+          const indicator = isSelected ? "\u25cf " : "  ";
           const color = isSelected ? theme.selectedText : theme.text;
 
           return (
@@ -89,7 +92,7 @@ export function ThemePopup({
             >
               {indicator}
               {THEMES[name].name}
-              {isActive ? <span fg={theme.textSuccess}>{" \u2713"}</span> : ""}
+              {isActive ? <span fg={theme.textSuccess}>{" \u25cf"}</span> : ""}
             </text>
           );
         })}
@@ -97,7 +100,7 @@ export function ThemePopup({
           <text fg={theme.textMuted}>{`  ${cursor + 1}/${names.length}`}</text>
         )}
         <text>{""}</text>
-        <text fg={theme.textMuted}>{"Enter: apply  Esc: close  \u2191/\u2193: navigate"}</text>
+        <text fg={theme.textMuted}>{"enter apply  \u2191/\u2193 navigate"}</text>
       </box>
     </box>
   );

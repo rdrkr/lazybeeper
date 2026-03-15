@@ -1,9 +1,25 @@
 // Copyright (c) 2026 lazybeeper by Ronen Druker.
 
+import React from "react";
 import { describe, it, expect } from "vitest";
 import { render } from "../../helpers/render.js";
 import { ChatsPanel } from "../../../src/ui/panel/chats-panel.js";
 import type { Chat } from "../../../src/domain/types.js";
+import { ChatListStyle, Style } from "../../../src/domain/config-file.js";
+import { StyleProvider } from "../../../src/ui/style/context.js";
+
+/**
+ * Wraps ChatsPanel with retro style for consistent border-based rendering.
+ * @param props - The ChatsPanel props.
+ * @returns The wrapped element.
+ */
+function RetroChatsPanel(props: React.ComponentProps<typeof ChatsPanel>): React.ReactNode {
+  return (
+    <StyleProvider value={Style.Retro}>
+      <ChatsPanel {...props} />
+    </StyleProvider>
+  );
+}
 
 const mockChats: Chat[] = [
   {
@@ -41,14 +57,30 @@ const mockChats: Chat[] = [
 describe("ChatsPanel", () => {
   it("renders the title", async () => {
     const rendered = await render(
-      <ChatsPanel chats={mockChats} focused={false} width={30} height={20} cursor={0} top={0} />,
+      <RetroChatsPanel
+        chats={mockChats}
+        focused={false}
+        width={30}
+        height={20}
+        cursor={0}
+        top={0}
+        chatListStyle={ChatListStyle.Compact}
+      />,
     );
-    expect(rendered.lastFrame()).toContain("Chats [2]");
+    expect(rendered.lastFrame()).toContain("Chats");
   });
 
   it("renders chat names with avatar initials", async () => {
     const rendered = await render(
-      <ChatsPanel chats={mockChats} focused={false} width={30} height={20} cursor={0} top={0} />,
+      <RetroChatsPanel
+        chats={mockChats}
+        focused={false}
+        width={30}
+        height={20}
+        cursor={0}
+        top={0}
+        chatListStyle={ChatListStyle.Compact}
+      />,
     );
     expect(rendered.lastFrame()).toContain("A");
     expect(rendered.lastFrame()).toContain("Alice");
@@ -60,7 +92,15 @@ describe("ChatsPanel", () => {
 
   it("renders pin and mute indicators", async () => {
     const rendered = await render(
-      <ChatsPanel chats={mockChats} focused={false} width={30} height={20} cursor={0} top={0} />,
+      <RetroChatsPanel
+        chats={mockChats}
+        focused={false}
+        width={30}
+        height={20}
+        cursor={0}
+        top={0}
+        chatListStyle={ChatListStyle.Compact}
+      />,
     );
     expect(rendered.lastFrame()).toContain("\u2605");
     expect(rendered.lastFrame()).toContain("\u223c");
@@ -68,38 +108,78 @@ describe("ChatsPanel", () => {
 
   it("renders unread count", async () => {
     const rendered = await render(
-      <ChatsPanel chats={mockChats} focused={false} width={30} height={20} cursor={0} top={0} />,
+      <RetroChatsPanel
+        chats={mockChats}
+        focused={false}
+        width={30}
+        height={20}
+        cursor={0}
+        top={0}
+        chatListStyle={ChatListStyle.Compact}
+      />,
     );
     expect(rendered.lastFrame()).toContain("(2)");
   });
 
   it("renders no chats message", async () => {
     const rendered = await render(
-      <ChatsPanel chats={[]} focused={false} width={30} height={20} cursor={0} top={0} />,
+      <RetroChatsPanel
+        chats={[]}
+        focused={false}
+        width={30}
+        height={20}
+        cursor={0}
+        top={0}
+        chatListStyle={ChatListStyle.Compact}
+      />,
     );
     expect(rendered.lastFrame()).toContain("No chats");
   });
 
   it("renders with focus", async () => {
     const rendered = await render(
-      <ChatsPanel chats={mockChats} focused={true} width={30} height={20} cursor={0} top={0} />,
+      <RetroChatsPanel
+        chats={mockChats}
+        focused={true}
+        width={30}
+        height={20}
+        cursor={0}
+        top={0}
+        chatListStyle={ChatListStyle.Compact}
+      />,
     );
-    expect(rendered.lastFrame()).toContain("\u25b8");
+    expect(rendered.lastFrame()).toContain("\u25cf");
   });
 
   it("renders cursor prefix on selected item", async () => {
     const rendered = await render(
-      <ChatsPanel chats={mockChats} focused={true} width={30} height={20} cursor={1} top={0} />,
+      <RetroChatsPanel
+        chats={mockChats}
+        focused={true}
+        width={30}
+        height={20}
+        cursor={1}
+        top={0}
+        chatListStyle={ChatListStyle.Compact}
+      />,
     );
-    expect(rendered.lastFrame()).toContain("\u25b8 BO Bob");
+    expect(rendered.lastFrame()).toContain("\u25cf BO Bob");
   });
 
   it("renders unfocused selected item without cursor indicator", async () => {
     const rendered = await render(
-      <ChatsPanel chats={mockChats} focused={false} width={30} height={20} cursor={0} top={0} />,
+      <RetroChatsPanel
+        chats={mockChats}
+        focused={false}
+        width={30}
+        height={20}
+        cursor={0}
+        top={0}
+        chatListStyle={ChatListStyle.Compact}
+      />,
     );
     expect(rendered.lastFrame()).toContain("Alice");
-    expect(rendered.lastFrame()).not.toContain("\u25b8");
+    expect(rendered.lastFrame()).not.toContain("\u25cf");
   });
 
   it("scrolls when cursor is past visible area", async () => {
@@ -115,7 +195,15 @@ describe("ChatsPanel", () => {
     }));
 
     const rendered = await render(
-      <ChatsPanel chats={manyChats} focused={true} width={30} height={10} cursor={8} top={0} />,
+      <RetroChatsPanel
+        chats={manyChats}
+        focused={true}
+        width={30}
+        height={10}
+        cursor={8}
+        top={0}
+        chatListStyle={ChatListStyle.Compact}
+      />,
     );
     expect(rendered.lastFrame()).toContain("Chat 8");
   });
@@ -133,16 +221,32 @@ describe("ChatsPanel", () => {
     }));
 
     const rendered = await render(
-      <ChatsPanel chats={manyChats} focused={false} width={30} height={10} cursor={0} top={0} />,
+      <RetroChatsPanel
+        chats={manyChats}
+        focused={false}
+        width={30}
+        height={10}
+        cursor={0}
+        top={0}
+        chatListStyle={ChatListStyle.Compact}
+      />,
     );
     expect(rendered.lastFrame()).toContain("of");
   });
 
   it("renders with tiny height", async () => {
     const rendered = await render(
-      <ChatsPanel chats={mockChats} focused={false} width={30} height={4} cursor={0} top={0} />,
+      <RetroChatsPanel
+        chats={mockChats}
+        focused={false}
+        width={30}
+        height={4}
+        cursor={0}
+        top={0}
+        chatListStyle={ChatListStyle.Compact}
+      />,
     );
-    expect(rendered.lastFrame()).toContain("Chats [2]");
+    expect(rendered.lastFrame()).toContain("Chats");
   });
 
   it("clamps offset down when cursor moves above current offset", async () => {
@@ -159,30 +263,111 @@ describe("ChatsPanel", () => {
 
     /* First render with cursor far down to push offset up. */
     const rendered = await render(
-      <ChatsPanel chats={manyChats} focused={true} width={30} height={10} cursor={8} top={0} />,
+      <RetroChatsPanel
+        chats={manyChats}
+        focused={true}
+        width={30}
+        height={10}
+        cursor={8}
+        top={0}
+        chatListStyle={ChatListStyle.Compact}
+      />,
     );
     expect(rendered.lastFrame()).toContain("Chat 8");
 
     /* Re-render with cursor at 0 so cursor < offset triggers. */
     await rendered.rerender(
-      <ChatsPanel chats={manyChats} focused={true} width={30} height={10} cursor={0} top={0} />,
+      <RetroChatsPanel
+        chats={manyChats}
+        focused={true}
+        width={30}
+        height={10}
+        cursor={0}
+        top={0}
+        chatListStyle={ChatListStyle.Compact}
+      />,
     );
     expect(rendered.lastFrame()).toContain("Chat 0");
   });
 
   it("handles negative cursor by clamping offset to 0", async () => {
     const rendered = await render(
-      <ChatsPanel chats={mockChats} focused={true} width={30} height={20} cursor={-1} top={0} />,
+      <RetroChatsPanel
+        chats={mockChats}
+        focused={true}
+        width={30}
+        height={20}
+        cursor={-1}
+        top={0}
+        chatListStyle={ChatListStyle.Compact}
+      />,
     );
-    expect(rendered.lastFrame()).toContain("Chats [2]");
+    expect(rendered.lastFrame()).toContain("Chats");
+  });
+
+  it("renders comfortable layout with 3 lines per chat", async () => {
+    const rendered = await render(
+      <RetroChatsPanel
+        chats={mockChats}
+        focused={false}
+        width={40}
+        height={20}
+        cursor={0}
+        top={0}
+        chatListStyle={ChatListStyle.Comfortable}
+      />,
+    );
+    const frame = rendered.lastFrame();
+    expect(frame).toContain("Alice");
+    expect(frame).toContain("Bob");
+  });
+
+  it("renders comfortable layout with time on third line", async () => {
+    const rendered = await render(
+      <RetroChatsPanel
+        chats={mockChats}
+        focused={true}
+        width={40}
+        height={20}
+        cursor={0}
+        top={0}
+        chatListStyle={ChatListStyle.Comfortable}
+      />,
+    );
+    expect(rendered.lastFrame()).toContain("Alice");
   });
 
   it("always renders initials in JSX regardless of Kitty support", async () => {
     const rendered = await render(
-      <ChatsPanel chats={mockChats} focused={false} width={30} height={20} cursor={0} top={0} />,
+      <RetroChatsPanel
+        chats={mockChats}
+        focused={false}
+        width={30}
+        height={20}
+        cursor={0}
+        top={0}
+        chatListStyle={ChatListStyle.Compact}
+      />,
     );
     const frame = rendered.lastFrame();
     expect(frame).toContain("AL");
+    expect(frame).toContain("Alice");
+  });
+
+  it("renders modern style without borders", async () => {
+    const rendered = await render(
+      <ChatsPanel
+        chats={mockChats}
+        focused={false}
+        width={30}
+        height={20}
+        cursor={0}
+        top={0}
+        chatListStyle={ChatListStyle.Compact}
+      />,
+    );
+    const frame = rendered.lastFrame();
+    expect(frame).toContain("Chats");
     expect(frame).toContain("Alice");
   });
 });

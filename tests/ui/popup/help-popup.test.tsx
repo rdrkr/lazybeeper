@@ -7,7 +7,7 @@ import { HelpPopup } from "../../../src/ui/popup/help-popup.js";
 describe("HelpPopup", () => {
   it("renders keybinding reference title", async () => {
     const rendered = await render(<HelpPopup width={80} height={40} />);
-    expect(rendered.lastFrame()).toContain("Keybinding Reference");
+    expect(rendered.lastFrame()).toContain("Keybindings");
   });
 
   it("renders key descriptions", async () => {
@@ -29,7 +29,7 @@ describe("HelpPopup", () => {
 
   it("renders close hint", async () => {
     const rendered = await render(<HelpPopup width={80} height={40} />);
-    expect(rendered.lastFrame()).toContain("Press Esc or ? to close");
+    expect(rendered.lastFrame()).toContain("? toggle");
   });
 
   it("handles small terminal sizes without crashing", async () => {

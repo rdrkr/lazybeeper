@@ -44,9 +44,17 @@ import { ThemePopup, getThemeAtCursor } from "./popup/theme-popup.js";
 import { ConfigPopup, CONFIG_ENTRY_COUNT } from "./popup/config-popup.js";
 import type { Theme } from "./theme/types.js";
 import { ThemeProvider } from "./theme/context.js";
+import { StyleProvider } from "./style/context.js";
 import { resolveTheme } from "./theme/themes.js";
 import { getThemeNames } from "./theme/themes.js";
-import { readConfigFile, updateConfigFileKey, SelectionMode } from "../domain/config-file.js";
+import {
+  readConfigFile,
+  updateConfigFileKey,
+  resetConfigFile,
+  SelectionMode,
+  ChatListStyle,
+  Style,
+} from "../domain/config-file.js";
 
 /** Props for the App component. */
 interface AppProps {
@@ -56,6 +64,10 @@ interface AppProps {
   readonly theme: Theme;
   /** Selection behavior for accounts and chats panels. */
   readonly selectionMode: SelectionMode;
+  /** Initial chat list style. */
+  readonly chatListStyle: ChatListStyle;
+  /** Initial visual style. */
+  readonly style: Style;
   /** Callback to cleanly shut down the application. */
   readonly onQuit: () => void;
 }
@@ -67,6 +79,8 @@ interface AppProps {
  * @param root0.repo - Data repository for fetching accounts, chats, messages.
  * @param root0.theme - Initial color theme.
  * @param root0.selectionMode - Selection behavior for accounts and chats panels.
+ * @param root0.chatListStyle - Initial chat list style.
+ * @param root0.style - Initial visual style.
  * @param root0.onQuit - Callback to cleanly shut down the application.
  * @returns The rendered App component.
  */
@@ -74,6 +88,8 @@ export function App({
   repo,
   theme: initialTheme,
   selectionMode: initialSelectionMode,
+  chatListStyle: initialChatListStyle,
+  style: initialStyle,
   onQuit,
 }: AppProps): React.ReactNode {
   const { state, dispatch, goNextPanel, goPrevPanel, goLeftPanel, goRightPanel } =
@@ -85,6 +101,12 @@ export function App({
 
   /* Selection mode state. */
   const [selectionMode, setSelectionMode] = useState<SelectionMode>(initialSelectionMode);
+
+  /* Chat list style state. */
+  const [chatListStyle, setChatListStyle] = useState<ChatListStyle>(initialChatListStyle);
+
+  /* Visual style state. */
+  const [activeStyle, setActiveStyle] = useState<Style>(initialStyle);
 
   /* Local UI state for cursors and inputs. */
   const [accountsCursor, setAccountsCursor] = useState(0);
@@ -173,16 +195,24 @@ export function App({
     setSavedTheme(newTheme);
     setActiveTheme(newTheme);
     setSelectionMode(config.selectionMode);
+    setChatListStyle(config.chatListStyle);
+    setActiveStyle(config.style);
     dispatch({ type: "error", error: "Configuration reloaded" });
   }, [dispatch]);
 
   /**
-   * Executes the confirm action (e.g., archive/unarchive) after user confirms.
+   * Executes the confirm action (e.g., archive/unarchive, reset config) after user confirms.
    * @param confirmed - Whether the user confirmed the action.
    */
   const handleConfirmAction = useCallback(
     (confirmed: boolean): void => {
       if (!confirmed) {
+        return;
+      }
+
+      if (state.confirmAction === ChatAction.ResetConfig) {
+        resetConfigFile();
+        reloadConfig();
         return;
       }
 
@@ -205,7 +235,7 @@ export function App({
         },
       );
     },
-    [state.confirmAction, state.confirmData, state.activeAccountId, repo, dispatch],
+    [state.confirmAction, state.confirmData, state.activeAccountId, repo, dispatch, reloadConfig],
   );
 
   /* --- Key handlers (defined before useKeyboard) --- */
@@ -230,13 +260,11 @@ export function App({
           }
         }
       } else if (isDownKey(key) || (key.ctrl && key.name === "n")) {
-        if (searchCursor < searchFiltered.length - 1) {
-          setSearchCursor(searchCursor + 1);
-        }
+        setSearchCursor(searchCursor < searchFiltered.length - 1 ? searchCursor + 1 : 0);
       } else if (isUpKey(key) || (key.ctrl && key.name === "p")) {
-        if (searchCursor > 0) {
-          setSearchCursor(searchCursor - 1);
-        }
+        setSearchCursor(
+          searchCursor > 0 ? searchCursor - 1 : Math.max(searchFiltered.length - 1, 0),
+        );
       }
     },
     [searchFiltered, searchCursor, dispatch],
@@ -277,17 +305,13 @@ export function App({
           dispatch({ type: "theme_selected", themeName: selected });
         }
       } else if (isDownKey(key)) {
-        if (themeCursor < themeCount - 1) {
-          const next = themeCursor + 1;
-          setThemeCursor(next);
-          previewThemeAtCursor(next);
-        }
+        const next = themeCursor < themeCount - 1 ? themeCursor + 1 : 0;
+        setThemeCursor(next);
+        previewThemeAtCursor(next);
       } else if (isUpKey(key)) {
-        if (themeCursor > 0) {
-          const next = themeCursor - 1;
-          setThemeCursor(next);
-          previewThemeAtCursor(next);
-        }
+        const next = themeCursor > 0 ? themeCursor - 1 : themeCount - 1;
+        setThemeCursor(next);
+        previewThemeAtCursor(next);
       } else if (isTopKey(key)) {
         setThemeCursor(0);
         previewThemeAtCursor(0);
@@ -310,13 +334,9 @@ export function App({
       if (isEscapeKey(key)) {
         dispatch({ type: "close_popup" });
       } else if (isDownKey(key)) {
-        if (configCursor < CONFIG_ENTRY_COUNT - 1) {
-          setConfigCursor(configCursor + 1);
-        }
+        setConfigCursor(configCursor < CONFIG_ENTRY_COUNT - 1 ? configCursor + 1 : 0);
       } else if (isUpKey(key)) {
-        if (configCursor > 0) {
-          setConfigCursor(configCursor - 1);
-        }
+        setConfigCursor(configCursor > 0 ? configCursor - 1 : CONFIG_ENTRY_COUNT - 1);
       } else if (isEnterKey(key)) {
         if (configCursor === 0) {
           /* Theme entry — open theme popup. */
@@ -332,10 +352,39 @@ export function App({
             selectionMode === SelectionMode.Navigate ? SelectionMode.Enter : SelectionMode.Navigate;
           setSelectionMode(next);
           updateConfigFileKey("selectionMode", next);
+        } else if (configCursor === 2) {
+          /* Chat list style — toggle between compact and comfortable. */
+          const next =
+            chatListStyle === ChatListStyle.Compact
+              ? ChatListStyle.Comfortable
+              : ChatListStyle.Compact;
+          setChatListStyle(next);
+          updateConfigFileKey("chatListStyle", next);
+        } else if (configCursor === 3) {
+          /* Style — toggle between retro and modern. */
+          const next = activeStyle === Style.Retro ? Style.Modern : Style.Retro;
+          setActiveStyle(next);
+          updateConfigFileKey("style", next);
+        } else if (configCursor === 4) {
+          /* Reset to defaults — show confirmation popup. */
+          dispatch({
+            type: "show_confirm",
+            message: "Reset all settings to defaults? This cannot be undone.",
+            action: ChatAction.ResetConfig,
+            data: "",
+          });
         }
       }
     },
-    [configCursor, activeTheme.name, selectionMode, previewThemeAtCursor, dispatch],
+    [
+      configCursor,
+      activeTheme.name,
+      selectionMode,
+      chatListStyle,
+      activeStyle,
+      previewThemeAtCursor,
+      dispatch,
+    ],
   );
 
   /**
@@ -681,15 +730,30 @@ export function App({
     );
   }
 
+  /** Whether to use modern style rendering. */
+  const isModern = activeStyle === Style.Modern;
+
   /**
    * Renders the active popup as an overlay on top of the main view.
+   * Uses the wrapper box's own background for the dim backdrop so
+   * the popup content always paints on top.
    * @returns The popup element or null if no popup is active.
    */
   function renderPopup(): React.ReactNode {
+    /** Dim backdrop color for modern style popups. */
+    const popupBg = isModern ? "#00000088" : undefined;
+
     switch (state.activePopup) {
       case PopupType.Search:
         return (
-          <box position="absolute" top={0} left={0}>
+          <box
+            position="absolute"
+            top={0}
+            left={0}
+            width={layout.totalWidth}
+            height={layout.totalHeight}
+            backgroundColor={popupBg}
+          >
             <SearchPopup
               chats={state.chats}
               query={searchQuery}
@@ -710,14 +774,28 @@ export function App({
 
       case PopupType.Help:
         return (
-          <box position="absolute" top={0} left={0}>
+          <box
+            position="absolute"
+            top={0}
+            left={0}
+            width={layout.totalWidth}
+            height={layout.totalHeight}
+            backgroundColor={popupBg}
+          >
             <HelpPopup width={layout.totalWidth} height={layout.totalHeight} />
           </box>
         );
 
       case PopupType.Confirm:
         return (
-          <box position="absolute" top={0} left={0}>
+          <box
+            position="absolute"
+            top={0}
+            left={0}
+            width={layout.totalWidth}
+            height={layout.totalHeight}
+            backgroundColor={popupBg}
+          >
             <ConfirmPopup
               message={state.confirmMessage}
               action={state.confirmAction}
@@ -741,7 +819,14 @@ export function App({
 
       case PopupType.Theme:
         return (
-          <box position="absolute" top={0} left={0}>
+          <box
+            position="absolute"
+            top={0}
+            left={0}
+            width={layout.totalWidth}
+            height={layout.totalHeight}
+            backgroundColor={popupBg}
+          >
             <ThemePopup
               cursor={themeCursor}
               activeTheme={activeTheme.name}
@@ -753,11 +838,20 @@ export function App({
 
       case PopupType.Config:
         return (
-          <box position="absolute" top={0} left={0}>
+          <box
+            position="absolute"
+            top={0}
+            left={0}
+            width={layout.totalWidth}
+            height={layout.totalHeight}
+            backgroundColor={popupBg}
+          >
             <ConfigPopup
               cursor={configCursor}
               currentTheme={activeTheme.name}
               selectionMode={selectionMode}
+              chatListStyle={chatListStyle}
+              style={activeStyle}
               width={layout.totalWidth}
               height={layout.totalHeight}
             />
@@ -771,57 +865,68 @@ export function App({
 
   return (
     <ThemeProvider value={activeTheme}>
-      <box flexDirection="column" width={layout.totalWidth} height={layout.totalHeight}>
-        <box flexDirection="row">
-          {/* Sidebar */}
-          <box flexDirection="column" width={layout.sidebarWidth}>
-            <AccountsPanel
-              accounts={state.accounts}
-              focused={state.focus === PanelFocus.Accounts}
-              width={layout.sidebarWidth}
-              height={layout.accountsHeight}
-              cursor={accountsCursor}
-            />
-            <ChatsPanel
-              chats={state.chats}
-              focused={state.focus === PanelFocus.Chats}
-              width={layout.sidebarWidth}
-              height={layout.chatsHeight}
-              cursor={chatsCursor}
-              top={layout.accountsHeight}
-            />
+      <StyleProvider value={activeStyle}>
+        <box flexDirection="column" width={layout.totalWidth} height={layout.totalHeight}>
+          <box flexDirection="row">
+            {/* Sidebar */}
+            <box
+              flexDirection="column"
+              width={isModern ? layout.sidebarWidth - 1 : layout.sidebarWidth}
+            >
+              <AccountsPanel
+                accounts={state.accounts}
+                focused={state.focus === PanelFocus.Accounts}
+                width={isModern ? layout.sidebarWidth - 1 : layout.sidebarWidth}
+                height={isModern ? layout.accountsHeight - 1 : layout.accountsHeight}
+                cursor={accountsCursor}
+              />
+              {isModern && <box height={1} />}
+              <ChatsPanel
+                chats={state.chats}
+                focused={state.focus === PanelFocus.Chats}
+                width={isModern ? layout.sidebarWidth - 1 : layout.sidebarWidth}
+                height={isModern ? layout.chatsHeight - 1 : layout.chatsHeight}
+                cursor={chatsCursor}
+                top={isModern ? layout.accountsHeight : layout.accountsHeight}
+                chatListStyle={chatListStyle}
+              />
+            </box>
+            {isModern && <box width={1} />}
+            {/* Main area */}
+            <box flexDirection="column" width={isModern ? layout.mainWidth - 1 : layout.mainWidth}>
+              <MessagesPanel
+                messages={state.messages}
+                chatName={state.activeChatName}
+                focused={state.focus === PanelFocus.Messages}
+                width={isModern ? layout.mainWidth - 1 : layout.mainWidth}
+                height={
+                  isModern ? layout.messagesHeight + layout.inputHeight - 4 : layout.messagesHeight
+                }
+                scrollOffset={messagesScroll}
+              />
+              {isModern && <box height={1} />}
+              <InputPanel
+                focused={state.focus === PanelFocus.Input}
+                width={isModern ? layout.mainWidth - 1 : layout.mainWidth}
+                height={isModern ? 3 : layout.inputHeight}
+                value={inputValue}
+                onInput={setInputValue}
+                onSubmit={handleSendMessage}
+              />
+            </box>
           </box>
-          {/* Main area */}
-          <box flexDirection="column" width={layout.mainWidth}>
-            <MessagesPanel
-              messages={state.messages}
-              chatName={state.activeChatName}
-              focused={state.focus === PanelFocus.Messages}
-              width={layout.mainWidth}
-              height={layout.messagesHeight}
-              scrollOffset={messagesScroll}
-            />
-            <InputPanel
-              focused={state.focus === PanelFocus.Input}
-              width={layout.mainWidth}
-              height={layout.inputHeight}
-              value={inputValue}
-              onInput={setInputValue}
-              onSubmit={handleSendMessage}
-            />
-          </box>
+          <StatusBar
+            width={layout.totalWidth}
+            focus={state.focus}
+            chatName={state.activeChatName}
+            isMock={state.isMock}
+            errorMessage={state.errorMessage}
+            errorTime={state.errorTime}
+            errorDuration={state.errorDuration}
+          />
+          {renderPopup()}
         </box>
-        <StatusBar
-          width={layout.totalWidth}
-          focus={state.focus}
-          chatName={state.activeChatName}
-          isMock={state.isMock}
-          errorMessage={state.errorMessage}
-          errorTime={state.errorTime}
-          errorDuration={state.errorDuration}
-        />
-        {renderPopup()}
-      </box>
+      </StyleProvider>
     </ThemeProvider>
   );
 }

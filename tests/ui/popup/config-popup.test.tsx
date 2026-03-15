@@ -3,7 +3,7 @@
 import { describe, it, expect } from "vitest";
 import { render } from "../../helpers/render.js";
 import { ConfigPopup, CONFIG_ENTRY_COUNT } from "../../../src/ui/popup/config-popup.js";
-import { SelectionMode } from "../../../src/domain/config-file.js";
+import { SelectionMode, ChatListStyle, Style } from "../../../src/domain/config-file.js";
 
 describe("ConfigPopup", () => {
   it("renders configuration title", async () => {
@@ -12,6 +12,8 @@ describe("ConfigPopup", () => {
         cursor={0}
         currentTheme="Catppuccin Mocha"
         selectionMode={SelectionMode.Enter}
+        chatListStyle={ChatListStyle.Comfortable}
+        style={Style.Modern}
         width={80}
         height={40}
       />,
@@ -25,6 +27,8 @@ describe("ConfigPopup", () => {
         cursor={0}
         currentTheme="Dracula"
         selectionMode={SelectionMode.Enter}
+        chatListStyle={ChatListStyle.Comfortable}
+        style={Style.Modern}
         width={80}
         height={40}
       />,
@@ -40,6 +44,8 @@ describe("ConfigPopup", () => {
         cursor={1}
         currentTheme="Catppuccin Mocha"
         selectionMode={SelectionMode.Navigate}
+        chatListStyle={ChatListStyle.Comfortable}
+        style={Style.Modern}
         width={80}
         height={40}
       />,
@@ -55,11 +61,13 @@ describe("ConfigPopup", () => {
         cursor={0}
         currentTheme="Catppuccin Mocha"
         selectionMode={SelectionMode.Enter}
+        chatListStyle={ChatListStyle.Comfortable}
+        style={Style.Modern}
         width={80}
         height={40}
       />,
     );
-    expect(rendered.lastFrame()).toContain("\u25b8");
+    expect(rendered.lastFrame()).toContain("\u25cf");
   });
 
   it("renders hint text", async () => {
@@ -68,12 +76,13 @@ describe("ConfigPopup", () => {
         cursor={0}
         currentTheme="Catppuccin Mocha"
         selectionMode={SelectionMode.Enter}
+        chatListStyle={ChatListStyle.Comfortable}
+        style={Style.Modern}
         width={80}
         height={40}
       />,
     );
-    expect(rendered.lastFrame()).toContain("Enter: edit");
-    expect(rendered.lastFrame()).toContain("Esc: close");
+    expect(rendered.lastFrame()).toContain("enter edit");
   });
 
   it("handles small terminal sizes without crashing", async () => {
@@ -82,6 +91,8 @@ describe("ConfigPopup", () => {
         cursor={0}
         currentTheme="Catppuccin Mocha"
         selectionMode={SelectionMode.Enter}
+        chatListStyle={ChatListStyle.Comfortable}
+        style={Style.Modern}
         width={20}
         height={10}
       />,
@@ -89,7 +100,73 @@ describe("ConfigPopup", () => {
     expect(rendered.lastFrame()).toBeDefined();
   });
 
-  it("exports CONFIG_ENTRY_COUNT as 2", () => {
-    expect(CONFIG_ENTRY_COUNT).toBe(2);
+  it("renders chat list style entry", async () => {
+    const rendered = await render(
+      <ConfigPopup
+        cursor={2}
+        currentTheme="Catppuccin Mocha"
+        selectionMode={SelectionMode.Enter}
+        chatListStyle={ChatListStyle.Comfortable}
+        style={Style.Modern}
+        width={80}
+        height={40}
+      />,
+    );
+    const frame = rendered.lastFrame();
+    expect(frame).toContain("Chat List");
+    expect(frame).toContain("comfortable");
+  });
+
+  it("renders style entry", async () => {
+    const rendered = await render(
+      <ConfigPopup
+        cursor={3}
+        currentTheme="Catppuccin Mocha"
+        selectionMode={SelectionMode.Enter}
+        chatListStyle={ChatListStyle.Comfortable}
+        style={Style.Modern}
+        width={80}
+        height={40}
+      />,
+    );
+    const frame = rendered.lastFrame();
+    expect(frame).toContain("Style");
+    expect(frame).toContain("modern");
+  });
+
+  it("renders reset to defaults entry in red when selected", async () => {
+    const rendered = await render(
+      <ConfigPopup
+        cursor={4}
+        currentTheme="Catppuccin Mocha"
+        selectionMode={SelectionMode.Enter}
+        chatListStyle={ChatListStyle.Comfortable}
+        style={Style.Modern}
+        width={80}
+        height={40}
+      />,
+    );
+    const frame = rendered.lastFrame();
+    expect(frame).toContain("Reset to Defaults");
+    expect(frame).toContain("\u25cf");
+  });
+
+  it("renders reset to defaults entry muted when not selected", async () => {
+    const rendered = await render(
+      <ConfigPopup
+        cursor={0}
+        currentTheme="Catppuccin Mocha"
+        selectionMode={SelectionMode.Enter}
+        chatListStyle={ChatListStyle.Comfortable}
+        style={Style.Modern}
+        width={80}
+        height={40}
+      />,
+    );
+    expect(rendered.lastFrame()).toContain("Reset to Defaults");
+  });
+
+  it("exports CONFIG_ENTRY_COUNT as 5", () => {
+    expect(CONFIG_ENTRY_COUNT).toBe(5);
   });
 });

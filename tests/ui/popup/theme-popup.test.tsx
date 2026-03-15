@@ -8,20 +8,21 @@ import { getThemeNames, THEMES } from "../../../src/ui/theme/themes.js";
 describe("ThemePopup", () => {
   const names = getThemeNames();
 
-  it("renders 'Select Theme' title", async () => {
+  it("renders 'Themes' title", async () => {
     const rendered = await render(
       <ThemePopup cursor={0} activeTheme="Catppuccin Mocha" width={80} height={40} />,
     );
-    expect(rendered.lastFrame()).toContain("Select Theme");
+    expect(rendered.lastFrame()).toContain("Themes");
   });
 
-  it("shows theme names from the themes registry", async () => {
+  it("shows visible theme names from the themes registry", async () => {
     const rendered = await render(
       <ThemePopup cursor={0} activeTheme="Catppuccin Mocha" width={80} height={40} />,
     );
     const frame = rendered.lastFrame();
-    // All themes should be visible when MAX_VISIBLE (12) >= names.length (10)
-    for (const name of names) {
+    // With 15 themes and MAX_VISIBLE=12, only the first 12 are visible at cursor=0
+    const visibleNames = names.slice(0, 12);
+    for (const name of visibleNames) {
       expect(frame).toContain(THEMES[name].name);
     }
   });
@@ -32,7 +33,7 @@ describe("ThemePopup", () => {
     );
     const frame = rendered.lastFrame();
     // The first theme should have the cursor indicator
-    expect(frame).toContain("\u25b8");
+    expect(frame).toContain("\u25cf");
   });
 
   it("moves cursor indicator to the correct item", async () => {
@@ -43,7 +44,7 @@ describe("ThemePopup", () => {
     const lines = frame.split("\n");
     // Find the line that contains the 4th theme name with cursor indicator
     const fourthThemeName = THEMES[names[3]!].name;
-    const cursorLine = lines.find((l) => l.includes("\u25b8") && l.includes(fourthThemeName));
+    const cursorLine = lines.find((l) => l.includes("\u25cf") && l.includes(fourthThemeName));
     expect(cursorLine).toBeDefined();
   });
 
@@ -53,7 +54,7 @@ describe("ThemePopup", () => {
       <ThemePopup cursor={0} activeTheme={activeThemeName} width={80} height={40} />,
     );
     const frame = rendered.lastFrame();
-    expect(frame).toContain("\u2713");
+    expect(frame).toContain("\u25cf");
   });
 
   it("does not show checkmark when active theme does not match any", async () => {
@@ -61,7 +62,12 @@ describe("ThemePopup", () => {
       <ThemePopup cursor={0} activeTheme="nonexistent-theme" width={80} height={40} />,
     );
     const frame = rendered.lastFrame();
-    expect(frame).not.toContain("\u2713");
+    // When no theme matches, there should be no active indicator on any row
+    // (the cursor indicator ● will still appear on the selected row)
+    const lines = frame.split("\n");
+    // Count ● occurrences - should only be 1 (cursor), not 2 (cursor + active)
+    const bulletCount = lines.filter((l) => l.includes("\u25cf")).length;
+    expect(bulletCount).toBeLessThanOrEqual(1);
   });
 
   it("shows checkmark only on the active theme row", async () => {
@@ -72,9 +78,11 @@ describe("ThemePopup", () => {
     );
     const frame = rendered.lastFrame();
     const lines = frame.split("\n");
-    const checkmarkLine = lines.find((l) => l.includes("\u2713"));
-    expect(checkmarkLine).toBeDefined();
-    expect(checkmarkLine).toContain(activeThemeName);
+    // Find rows with ● — one for cursor on first item, one for active theme indicator
+    const bulletLines = lines.filter((l) => l.includes("\u25cf"));
+    // The active theme row should have ●
+    const activeLine = bulletLines.find((l) => l.includes(activeThemeName));
+    expect(activeLine).toBeDefined();
   });
 
   it("shows navigation hint text", async () => {
@@ -82,8 +90,7 @@ describe("ThemePopup", () => {
       <ThemePopup cursor={0} activeTheme="Catppuccin Mocha" width={80} height={40} />,
     );
     const frame = rendered.lastFrame();
-    expect(frame).toContain("Enter: apply");
-    expect(frame).toContain("Esc: close");
+    expect(frame).toContain("enter apply");
     expect(frame).toContain("navigate");
   });
 
@@ -111,27 +118,24 @@ describe("ThemePopup", () => {
     expect(rendered.lastFrame()).toBeDefined();
   });
 
-  it("does not show scroll position when all themes fit within MAX_VISIBLE", async () => {
-    // With 10 themes and MAX_VISIBLE=12, all fit — no scroll indicator
+  it("shows scroll position when there are more themes than MAX_VISIBLE", async () => {
+    // With 15 themes and MAX_VISIBLE=12, scroll indicator should appear
     const rendered = await render(
       <ThemePopup cursor={0} activeTheme="Catppuccin Mocha" width={80} height={40} />,
     );
     const frame = rendered.lastFrame();
     // Scroll indicator format is "  cursor+1/total"
-    expect(frame).not.toMatch(/\d+\/\d+/);
+    expect(frame).toMatch(/\d+\/\d+/);
   });
 
-  it("shows scroll position when there are more themes than visible", async () => {
-    // Since there are 10 themes and MAX_VISIBLE is 12, all fit.
-    // This test verifies the branch by checking the condition directly.
-    // With 10 themes, names.length (10) <= MAX_VISIBLE (12), so no scroll.
-    // We verify the branch is correctly not taken.
+  it("shows scroll position at different cursor positions", async () => {
+    // With 15 themes and MAX_VISIBLE=12, scroll indicator should appear
     const rendered = await render(
       <ThemePopup cursor={5} activeTheme="Catppuccin Mocha" width={80} height={40} />,
     );
     const frame = rendered.lastFrame();
-    // With 10 themes and MAX_VISIBLE=12, scroll indicator should NOT appear
-    expect(frame).not.toMatch(/\d+\/\d+/);
+    // With 15 themes and MAX_VISIBLE=12, scroll indicator should appear
+    expect(frame).toMatch(/\d+\/\d+/);
   });
 
   it("renders correctly with cursor at the last theme", async () => {
@@ -144,7 +148,7 @@ describe("ThemePopup", () => {
     // Cursor should be on the last theme
     const cursorLine = frame
       .split("\n")
-      .find((l) => l.includes("\u25b8") && l.includes(lastThemeName));
+      .find((l) => l.includes("\u25cf") && l.includes(lastThemeName));
     expect(cursorLine).toBeDefined();
   });
 

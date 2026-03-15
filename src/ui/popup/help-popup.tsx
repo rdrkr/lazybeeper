@@ -114,9 +114,13 @@ export function HelpPopup({ width, height }: HelpPopupProps): React.ReactNode {
         height={boxHeight}
         overflow="hidden"
       >
-        <text attributes={TextAttributes.BOLD} fg={theme.primary}>
-          Keybinding Reference
-        </text>
+        <box flexDirection="row" justifyContent="space-between" width={boxWidth - 6}>
+          <text attributes={TextAttributes.BOLD} fg={theme.primary}>
+            Keybindings
+          </text>
+          <text fg={theme.textMuted}>esc</text>
+        </box>
+        <text>{""}</text>
         <text>{""}</text>
         {HELP_SECTIONS.map((section, sectionIdx) => (
           <React.Fragment key={section.title}>
@@ -136,7 +140,8 @@ export function HelpPopup({ width, height }: HelpPopupProps): React.ReactNode {
             ))}
           </React.Fragment>
         ))}
-        <text fg={theme.textMuted}>{"Press Esc or ? to close"}</text>
+        <text>{""}</text>
+        <text fg={theme.textMuted}>{"? toggle"}</text>
       </box>
     </box>
   );

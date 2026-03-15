@@ -5,6 +5,8 @@ import { TextAttributes } from "@opentui/core";
 import type { Account } from "../../domain/types.js";
 import { ALL_ACCOUNTS_ID } from "../../domain/types.js";
 import { useTheme } from "../theme/context.js";
+import { useStyle } from "../style/context.js";
+import { Style } from "../../domain/config-file.js";
 
 /** Props for the AccountsPanel component. */
 interface AccountsPanelProps {
@@ -32,9 +34,11 @@ export const AccountsPanel = React.memo(function AccountsPanel({
   cursor,
 }: AccountsPanelProps): React.ReactNode {
   const theme = useTheme();
+  const style = useStyle();
+  const isModern = style === Style.Modern;
   const [offset, setOffset] = useState(0);
 
-  const innerHeight = Math.max(height - 2, 0);
+  const innerHeight = Math.max(height - (isModern ? 0 : 2), 0);
   const titleLines = 1;
   let usableSlots = innerHeight - titleLines;
 
@@ -61,9 +65,10 @@ export const AccountsPanel = React.memo(function AccountsPanel({
       flexDirection="column"
       width={width}
       height={height}
-      border={true}
-      borderStyle="rounded"
-      borderColor={borderColor}
+      border={!isModern}
+      borderStyle={isModern ? undefined : "rounded"}
+      borderColor={isModern ? undefined : borderColor}
+      backgroundColor={isModern ? theme.backgroundPanel : undefined}
     >
       <text attributes={TextAttributes.BOLD} fg={theme.primary}>
         {" Accounts [1]"}
@@ -141,7 +146,7 @@ function AccountLine({
   }
 
   if (isAllAccount) {
-    const indicator = isSelected && focused ? "\u25b8 " : "  ";
+    const indicator = isSelected && focused ? "\u25cf " : "  ";
     return (
       <text>
         <span fg={theme.primary}> {indicator}</span>
@@ -153,7 +158,7 @@ function AccountLine({
   }
 
   const branch = isLast ? "\u2514" : "\u251c";
-  const indicator = isSelected && focused ? "\u25b8" : " ";
+  const indicator = isSelected && focused ? "\u25cf" : " ";
   const dotColor = account.connected ? theme.connected : theme.disconnected;
 
   return (

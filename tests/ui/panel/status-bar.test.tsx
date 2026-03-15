@@ -20,7 +20,7 @@ describe("StatusBar", () => {
   it("renders keybinding hints", async () => {
     const rendered = await render(<StatusBar {...defaults} />);
     const frame = rendered.lastFrame();
-    expect(frame).toContain("Tab");
+    expect(frame).toContain("tab");
     expect(frame).toContain("j/k");
     expect(frame).toContain("search");
     expect(frame).toContain("config");

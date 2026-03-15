@@ -5,28 +5,25 @@ bun = "latest"
 
 [tasks.fmt]
 description = "Format code with Prettier"
-run = "bunx prettier --write 'src/**/*.{ts,tsx}' 'tests/**/*.{ts,tsx}'"
+run = "bunx prettier --check --write 'src/**/*.{ts,tsx}' 'tests/**/*.{ts,tsx}'"
 
 [tasks.lint]
 description = "Run ESLint with auto-fix"
 run = "bunx eslint 'src/**/*.{ts,tsx}' 'tests/**/*.{ts,tsx}' --fix"
 
-[tasks.test]
-description = "Run all tests with coverage"
-run = "bunx vitest run --coverage"
-
 [tasks.build]
 description = "Build the project"
+depends = ["fmt", "lint"]
 run = "bunx tsc"
+
+[tasks.test]
+description = "Run all tests with coverage"
+depends = ["build"]
+run = "bunx vitest run --coverage"
 
 [tasks.check]
 description = "Full check: verify formatting, lint, test with coverage, build"
-run = """
-bunx prettier --check 'src/**/*.{ts,tsx}' 'tests/**/*.{ts,tsx}' && \
-bunx eslint 'src/**/*.{ts,tsx}' 'tests/**/*.{ts,tsx}' && \
-bunx vitest run --coverage && \
-bunx tsc
-"""
+depends = ["build"]
 
 [tasks.run]
 description = "Run the application (mock mode by default)"
@@ -35,6 +32,10 @@ run = "bun run src/index.tsx --token ''"
 [tasks.clean]
 description = "Clean build artifacts"
 run = "rm -rf dist coverage tsconfig.tsbuildinfo"
+
+[tasks.dev]
+description = "Run the application for development (mock mode by default)"
+run = [{ task = "clean" }, { task = "check" }, { task = "run" }]
 
 [tasks.outdated]
 description = "List outdated npm packages"

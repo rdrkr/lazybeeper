@@ -38,6 +38,12 @@ const TMUX_ROW_OFFSET = 2;
 /** Cache of pre-built Kitty graphics escape sequences keyed by "path:cols:rows". */
 const imageCache = new Map<string, string>();
 
+/** Whether the tmux pane is currently visible (has focus). */
+let paneVisible = true;
+
+/** Callback invoked when tmux pane visibility changes. */
+let visibilityCallback: ((visible: boolean) => void) | null = null;
+
 /**
  * Returns whether the terminal supports Kitty graphics protocol.
  * Must be called after {@link detectKittyGraphics} has resolved.
@@ -297,9 +303,85 @@ export function writeImageOverlays(
 }
 
 /**
+ * Returns whether the tmux pane is currently visible (has focus).
+ * Always true when not running in tmux.
+ * @returns True if the pane is visible.
+ */
+export function isPaneVisible(): boolean {
+  return paneVisible;
+}
+
+/**
+ * Registers a callback to be invoked when tmux pane visibility changes.
+ * Pass null to unregister.
+ * @param cb - The callback to invoke, or null to unregister.
+ */
+export function setVisibilityCallback(cb: ((visible: boolean) => void) | null): void {
+  visibilityCallback = cb;
+}
+
+/* v8 ignore start -- focus reporting requires real tmux+TTY, covered by manual integration testing */
+/**
+ * Handles raw stdin data to detect terminal focus events.
+ * Focus-in (`\x1b[I`) and focus-out (`\x1b[O`) sequences are sent
+ * by the terminal when focus reporting mode is enabled.
+ * @param data - Raw data from stdin.
+ */
+function handleFocusData(data: Buffer): void {
+  const str = data.toString();
+  if (str.includes("\x1b[O")) {
+    paneVisible = false;
+    deleteAllImages();
+    visibilityCallback?.(false);
+  } else if (str.includes("\x1b[I")) {
+    paneVisible = true;
+    visibilityCallback?.(true);
+  }
+}
+
+/**
+ * Enables terminal focus reporting so that image overlays can be
+ * cleaned up when the tmux pane loses focus. Sends `\x1b[?1004h`
+ * to enable focus events and registers a stdin listener.
+ *
+ * Only active when running in tmux with Kitty graphics support.
+ */
+export function enableFocusReporting(): void {
+  if (!inTmux || !supported) {
+    return;
+  }
+  const enable = "\x1b[?1004h";
+  writeSync(1, tmuxWrap(enable));
+  process.stdin.on("data", handleFocusData);
+}
+
+/**
+ * Disables terminal focus reporting and removes the stdin listener.
+ * Sends `\x1b[?1004l` to turn off focus events.
+ */
+export function disableFocusReporting(): void {
+  if (!inTmux) {
+    return;
+  }
+  const disable = "\x1b[?1004l";
+  writeSync(1, tmuxWrap(disable));
+  process.stdin.removeListener("data", handleFocusData);
+}
+/* v8 ignore stop */
+
+/**
  * Clears the image sequence cache.
  * Primarily used for testing.
  */
 export function clearImageCache(): void {
   imageCache.clear();
+}
+
+/**
+ * Resets the pane visibility flag and callback.
+ * Primarily used for testing.
+ */
+export function resetVisibility(): void {
+  paneVisible = true;
+  visibilityCallback = null;
 }

@@ -30,6 +30,9 @@ import {
   getTmuxRowOffset,
   writeImageOverlays,
   deleteAllImages,
+  isPaneVisible,
+  setVisibilityCallback,
+  resetVisibility,
 } from "../../src/ui/kitty.js";
 
 /** Directory containing mock avatar images for testing. */
@@ -257,5 +260,38 @@ describe("clearImageCache", () => {
     const second = loadKittyImage(ALICE_PNG, 2, 1);
     /* Same content but different string instance after cache clear. */
     expect(first).toEqual(second);
+  });
+});
+
+describe("isPaneVisible", () => {
+  afterEach(() => {
+    resetVisibility();
+  });
+
+  it("returns true by default", () => {
+    expect(isPaneVisible()).toBe(true);
+  });
+});
+
+describe("setVisibilityCallback", () => {
+  afterEach(() => {
+    resetVisibility();
+  });
+
+  it("accepts a callback without error", () => {
+    const cb = vi.fn();
+    setVisibilityCallback(cb);
+    /* No assertion beyond no-throw; callback is invoked by handleFocusData. */
+  });
+
+  it("accepts null to unregister", () => {
+    setVisibilityCallback(null);
+  });
+});
+
+describe("resetVisibility", () => {
+  it("resets pane visibility to true", () => {
+    resetVisibility();
+    expect(isPaneVisible()).toBe(true);
   });
 });

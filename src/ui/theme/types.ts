@@ -109,4 +109,8 @@ export type ThemeName =
   | "dracula"
   | "nord"
   | "gruvbox-dark"
-  | "one-dark";
+  | "one-dark"
+  | "everforest"
+  | "kanagawa"
+  | "flexoki"
+  | "monokai";

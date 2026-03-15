@@ -18,18 +18,40 @@ export enum SelectionMode {
   Enter = "enter",
 }
 
+/** Chat list layout density. */
+export enum ChatListStyle {
+  /** Two-line layout with inline initials on the name line. */
+  Compact = "compact",
+  /** Three-line layout with square avatar spanning two lines. */
+  Comfortable = "comfortable",
+}
+
+/** Visual rendering style. */
+export enum Style {
+  /** Flat design with borders separating panels. */
+  Retro = "retro",
+  /** Background-based panels, message bubbles, popup dimming. */
+  Modern = "modern",
+}
+
 /** Represents the persisted TOML configuration. */
 export interface ConfigFile {
   /** Color theme name. */
   readonly theme: string;
   /** Selection behavior for accounts and chats panels. */
   readonly selectionMode: SelectionMode;
+  /** Chat list layout density. */
+  readonly chatListStyle: ChatListStyle;
+  /** Visual rendering style. */
+  readonly style: Style;
 }
 
 /** Default configuration values. */
-const DEFAULT_CONFIG: ConfigFile = {
+export const DEFAULT_CONFIG: ConfigFile = {
   theme: "catppuccin-mocha",
   selectionMode: SelectionMode.Enter,
+  chatListStyle: ChatListStyle.Comfortable,
+  style: Style.Modern,
 };
 
 /**
@@ -70,6 +92,8 @@ export function readConfigFile(): ConfigFile {
     const config: ConfigFile = {
       theme: typeof parsed.theme === "string" ? parsed.theme : DEFAULT_CONFIG.theme,
       selectionMode: parseSelectionMode(parsed.selection_mode),
+      chatListStyle: parseChatListStyle(parsed.chat_list_style),
+      style: parseStyle(parsed.style),
     };
 
     /* Write back if the file is missing any expected keys. */
@@ -97,12 +121,14 @@ export function writeConfigFile(config: ConfigFile): void {
   const content = TOML.stringify({
     theme: config.theme,
     selection_mode: config.selectionMode,
+    chat_list_style: config.chatListStyle,
+    style: config.style,
   });
   fs.writeFileSync(configFilePath(), content, "utf-8");
 }
 
 /** TOML keys expected in the config file. */
-const EXPECTED_KEYS: readonly string[] = ["theme", "selection_mode"];
+const EXPECTED_KEYS: readonly string[] = ["theme", "selection_mode", "chat_list_style", "style"];
 
 /**
  * Returns true if the parsed TOML object contains all expected config keys.
@@ -129,6 +155,36 @@ function parseSelectionMode(value: unknown): SelectionMode {
 }
 
 /**
+ * Parses a raw value into a ChatListStyle enum.
+ * @param value - The raw value from config file.
+ * @returns The parsed ChatListStyle, falling back to the default.
+ */
+function parseChatListStyle(value: unknown): ChatListStyle {
+  if (typeof value === "string") {
+    const validValues: string[] = [ChatListStyle.Compact, ChatListStyle.Comfortable];
+    if (validValues.includes(value)) {
+      return value as ChatListStyle;
+    }
+  }
+  return DEFAULT_CONFIG.chatListStyle;
+}
+
+/**
+ * Parses a raw value into a Style enum.
+ * @param value - The raw value from config file.
+ * @returns The parsed Style, falling back to the default.
+ */
+function parseStyle(value: unknown): Style {
+  if (typeof value === "string") {
+    const validValues: string[] = [Style.Retro, Style.Modern];
+    if (validValues.includes(value)) {
+      return value as Style;
+    }
+  }
+  return DEFAULT_CONFIG.style;
+}
+
+/**
  * Updates a single key in the config file while preserving other values.
  * @param key - The config key to update.
  * @param value - The new value to set.
@@ -136,4 +192,11 @@ function parseSelectionMode(value: unknown): SelectionMode {
 export function updateConfigFileKey(key: keyof ConfigFile, value: string): void {
   const current = readConfigFile();
   writeConfigFile({ ...current, [key]: value as never });
+}
+
+/**
+ * Resets the config file to default values.
+ */
+export function resetConfigFile(): void {
+  writeConfigFile(DEFAULT_CONFIG);
 }

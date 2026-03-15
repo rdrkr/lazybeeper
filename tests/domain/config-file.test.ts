@@ -10,7 +10,11 @@ import {
   readConfigFile,
   writeConfigFile,
   updateConfigFileKey,
+  resetConfigFile,
   SelectionMode,
+  ChatListStyle,
+  Style,
+  DEFAULT_CONFIG,
 } from "../../src/domain/config-file.js";
 
 describe("config-file", () => {
@@ -56,10 +60,7 @@ describe("config-file", () => {
   describe("readConfigFile", () => {
     it("creates a default config file when none exists", () => {
       const result = readConfigFile();
-      expect(result).toEqual({
-        theme: "catppuccin-mocha",
-        selectionMode: SelectionMode.Enter,
-      });
+      expect(result).toEqual(DEFAULT_CONFIG);
       expect(fs.existsSync(configFilePath())).toBe(true);
     });
 
@@ -83,10 +84,7 @@ describe("config-file", () => {
       fs.writeFileSync(configFilePath(), "{{{{invalid toml!!", "utf-8");
 
       const result = readConfigFile();
-      expect(result).toEqual({
-        theme: "catppuccin-mocha",
-        selectionMode: SelectionMode.Enter,
-      });
+      expect(result).toEqual(DEFAULT_CONFIG);
     });
 
     it("returns default theme when theme value is not a string", () => {
@@ -128,7 +126,7 @@ describe("config-file", () => {
 
   describe("writeConfigFile", () => {
     it("writes TOML content to the config file", () => {
-      writeConfigFile({ theme: "nord", selectionMode: SelectionMode.Enter });
+      writeConfigFile({ ...DEFAULT_CONFIG, theme: "nord" });
 
       const content = fs.readFileSync(configFilePath(), "utf-8");
       expect(content).toContain("nord");
@@ -138,15 +136,15 @@ describe("config-file", () => {
       const dir = configDir();
       expect(fs.existsSync(dir)).toBe(false);
 
-      writeConfigFile({ theme: "solarized", selectionMode: SelectionMode.Enter });
+      writeConfigFile({ ...DEFAULT_CONFIG, theme: "solarized" });
 
       expect(fs.existsSync(dir)).toBe(true);
       expect(fs.existsSync(configFilePath())).toBe(true);
     });
 
     it("overwrites an existing config file", () => {
-      writeConfigFile({ theme: "nord", selectionMode: SelectionMode.Enter });
-      writeConfigFile({ theme: "dracula", selectionMode: SelectionMode.Enter });
+      writeConfigFile({ ...DEFAULT_CONFIG, theme: "nord" });
+      writeConfigFile({ ...DEFAULT_CONFIG, theme: "dracula" });
 
       const content = fs.readFileSync(configFilePath(), "utf-8");
       expect(content).toContain("dracula");
@@ -154,9 +152,94 @@ describe("config-file", () => {
     });
   });
 
+  describe("readConfigFile chat_list_style", () => {
+    it("reads chat_list_style from config file", () => {
+      const dir = configDir();
+      fs.mkdirSync(dir, { recursive: true });
+      fs.writeFileSync(
+        configFilePath(),
+        'theme = "nord"\nselection_mode = "enter"\nchat_list_style = "compact"\nstyle = "modern"\n',
+        "utf-8",
+      );
+      const result = readConfigFile();
+      expect(result.chatListStyle).toBe(ChatListStyle.Compact);
+    });
+
+    it("defaults chat_list_style when value is invalid", () => {
+      const dir = configDir();
+      fs.mkdirSync(dir, { recursive: true });
+      fs.writeFileSync(
+        configFilePath(),
+        'theme = "nord"\nselection_mode = "enter"\nchat_list_style = "bogus"\nstyle = "modern"\n',
+        "utf-8",
+      );
+      const result = readConfigFile();
+      expect(result.chatListStyle).toBe(ChatListStyle.Comfortable);
+    });
+
+    it("defaults chat_list_style when value is not a string", () => {
+      const dir = configDir();
+      fs.mkdirSync(dir, { recursive: true });
+      fs.writeFileSync(
+        configFilePath(),
+        'theme = "nord"\nselection_mode = "enter"\nchat_list_style = 42\nstyle = "modern"\n',
+        "utf-8",
+      );
+      const result = readConfigFile();
+      expect(result.chatListStyle).toBe(ChatListStyle.Comfortable);
+    });
+  });
+
+  describe("readConfigFile style", () => {
+    it("reads style from config file", () => {
+      const dir = configDir();
+      fs.mkdirSync(dir, { recursive: true });
+      fs.writeFileSync(
+        configFilePath(),
+        'theme = "nord"\nselection_mode = "enter"\nchat_list_style = "comfortable"\nstyle = "retro"\n',
+        "utf-8",
+      );
+      const result = readConfigFile();
+      expect(result.style).toBe(Style.Retro);
+    });
+
+    it("defaults style when value is invalid", () => {
+      const dir = configDir();
+      fs.mkdirSync(dir, { recursive: true });
+      fs.writeFileSync(
+        configFilePath(),
+        'theme = "nord"\nselection_mode = "enter"\nchat_list_style = "comfortable"\nstyle = "bogus"\n',
+        "utf-8",
+      );
+      const result = readConfigFile();
+      expect(result.style).toBe(Style.Modern);
+    });
+
+    it("defaults style when value is not a string", () => {
+      const dir = configDir();
+      fs.mkdirSync(dir, { recursive: true });
+      fs.writeFileSync(
+        configFilePath(),
+        'theme = "nord"\nselection_mode = "enter"\nchat_list_style = "comfortable"\nstyle = 99\n',
+        "utf-8",
+      );
+      const result = readConfigFile();
+      expect(result.style).toBe(Style.Modern);
+    });
+  });
+
+  describe("resetConfigFile", () => {
+    it("resets config to defaults", () => {
+      writeConfigFile({ ...DEFAULT_CONFIG, theme: "dracula" });
+      resetConfigFile();
+      const result = readConfigFile();
+      expect(result).toEqual(DEFAULT_CONFIG);
+    });
+  });
+
   describe("updateConfigFileKey", () => {
     it("updates the theme key in the config file", () => {
-      writeConfigFile({ theme: "nord", selectionMode: SelectionMode.Enter });
+      writeConfigFile({ ...DEFAULT_CONFIG, theme: "nord" });
 
       updateConfigFileKey("theme", "dracula");
 

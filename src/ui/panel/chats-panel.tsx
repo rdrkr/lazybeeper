@@ -3,7 +3,9 @@
 import React, { useState, useEffect, useRef, useMemo } from "react";
 import { TextAttributes } from "@opentui/core";
 import type { Chat } from "../../domain/types.js";
+import { ChatListStyle, Style } from "../../domain/config-file.js";
 import { useTheme } from "../theme/context.js";
+import { useStyle } from "../style/context.js";
 import { truncate, relativeTime, chatAvatar } from "../../domain/textutil.js";
 import {
   isKittySupported,
@@ -11,10 +13,21 @@ import {
   writeImageOverlays,
   deleteAllImages,
   getTmuxRowOffset,
+  setVisibilityCallback,
+  isInTmux,
 } from "../kitty.js";
 
-/** Number of rendered lines each chat entry takes. */
-const LINES_PER_CHAT = 2;
+/** Number of rendered lines each compact chat entry takes. */
+const LINES_PER_CHAT_COMPACT = 2;
+
+/** Number of rendered lines each comfortable chat entry takes (3 content + 1 spacer). */
+const LINES_PER_CHAT_COMFORTABLE = 4;
+
+/** Avatar width in columns for compact mode (2 cols ≈ square on 1 row). */
+const AVATAR_COLS_COMPACT = 2;
+
+/** Avatar width in columns for comfortable mode (6 cols ≈ square on 3 rows). */
+const AVATAR_COLS_COMFORTABLE = 6;
 
 /** Column offset where the avatar is rendered (border + prefix). */
 const AVATAR_COL = 5;
@@ -33,6 +46,8 @@ interface ChatsPanelProps {
   readonly cursor: number;
   /** Vertical offset of this panel from the top of the terminal. */
   readonly top: number;
+  /** Chat list layout density. */
+  readonly chatListStyle: ChatListStyle;
 }
 
 /**
@@ -47,20 +62,26 @@ export const ChatsPanel = React.memo(function ChatsPanel({
   height,
   cursor,
   top,
+  chatListStyle,
 }: ChatsPanelProps): React.ReactNode {
   const theme = useTheme();
+  const style = useStyle();
+  const isModern = style === Style.Modern;
   const [offset, setOffset] = useState(0);
 
-  const innerWidth = Math.max(width - 2, 0);
-  const innerHeight = Math.max(height - 2, 0);
+  const isComfortable = chatListStyle === ChatListStyle.Comfortable;
+  const linesPerChat = isComfortable ? LINES_PER_CHAT_COMFORTABLE : LINES_PER_CHAT_COMPACT;
+
+  const innerWidth = Math.max(width - (isModern ? 0 : 2), 0);
+  const innerHeight = Math.max(height - (isModern ? 0 : 2), 0);
   const titleLines = 1;
   let usable = innerHeight - titleLines;
 
-  if (chats.length * LINES_PER_CHAT > usable) {
+  if (chats.length * linesPerChat > usable) {
     usable--;
   }
 
-  const slots = usable < LINES_PER_CHAT ? 1 : Math.floor(usable / LINES_PER_CHAT);
+  const slots = usable < linesPerChat ? 1 : Math.floor(usable / linesPerChat);
 
   const clampedOffset = clampOffset(cursor, offset, slots);
   if (clampedOffset !== offset) {
@@ -74,6 +95,26 @@ export const ChatsPanel = React.memo(function ChatsPanel({
 
   /** Tracks the previous image fingerprint to avoid redundant redraws. */
   const prevImageKeyRef = useRef("");
+
+  /** Tracks tmux pane visibility for image cleanup on window switch. */
+  const [paneVis, setPaneVis] = useState(true);
+
+  /* v8 ignore start -- tmux visibility callback requires real tmux session */
+  useEffect(() => {
+    if (!isKittySupported() || !isInTmux()) {
+      return;
+    }
+    setVisibilityCallback((vis: boolean) => {
+      setPaneVis(vis);
+      if (!vis) {
+        prevImageKeyRef.current = "";
+      }
+    });
+    return (): void => {
+      setVisibilityCallback(null);
+    };
+  }, []);
+  /* v8 ignore stop */
 
   /*
    * Write Kitty graphics images directly to stdout after each render,
@@ -91,7 +132,7 @@ export const ChatsPanel = React.memo(function ChatsPanel({
    */
   /* v8 ignore start -- Kitty image overlay requires real terminal, covered by writeImageOverlays tests */
   useEffect(() => {
-    if (!isKittySupported()) {
+    if (!isKittySupported() || !paneVis) {
       return;
     }
 
@@ -104,19 +145,22 @@ export const ChatsPanel = React.memo(function ChatsPanel({
         return;
       }
 
-      const seq = loadKittyImage(chat.avatarPath, 2, 1);
+      const imgCols = isComfortable ? AVATAR_COLS_COMFORTABLE : AVATAR_COLS_COMPACT;
+      /** Perfect square: rows = cols / 2 due to terminal 2:1 cell aspect ratio. */
+      const imgRows = imgCols / 2;
+      const seq = loadKittyImage(chat.avatarPath, imgCols, imgRows);
       if (!seq) {
         return;
       }
 
       /* Row: top (panel Y offset) + 1 (border) + 1 (title) + visIdx * 2 + 1 (1-indexed). */
-      const row = top + 3 + visIdx * LINES_PER_CHAT + tmuxOffset;
+      const row = top + 3 + visIdx * linesPerChat + tmuxOffset;
       images.push({ seq, row, col: AVATAR_COL });
     });
 
     /* Build fingerprint from avatars, positions, and tmux offset. */
     const imageKey = visible
-      .map((c, i) => `${c.avatarPath ?? ""}:${String(top + 3 + i * LINES_PER_CHAT + tmuxOffset)}`)
+      .map((c, i) => `${c.avatarPath ?? ""}:${String(top + 3 + i * linesPerChat + tmuxOffset)}`)
       .join("|");
 
     /* Skip if nothing changed (prevents flicker on cursor navigation). */
@@ -128,7 +172,7 @@ export const ChatsPanel = React.memo(function ChatsPanel({
     deleteAllImages();
     writeImageOverlays(images);
     /* v8 ignore stop */
-  }, [visible, top, clampedOffset]);
+  }, [visible, top, clampedOffset, paneVis, linesPerChat, isComfortable]);
 
   /* v8 ignore start -- cleanup only reachable with real Kitty terminal */
   /* Clean up Kitty images when the component unmounts. */
@@ -146,13 +190,15 @@ export const ChatsPanel = React.memo(function ChatsPanel({
       flexDirection="column"
       width={width}
       height={height}
-      border={true}
-      borderStyle="rounded"
-      borderColor={borderColor}
+      border={!isModern}
+      borderStyle={isModern ? undefined : "rounded"}
+      borderColor={isModern ? undefined : borderColor}
+      backgroundColor={isModern ? theme.backgroundPanel : undefined}
     >
       <text attributes={TextAttributes.BOLD} fg={theme.primary}>
         {" Chats [2]"}
       </text>
+      <text> </text>
       {visible.length === 0 && <text fg={theme.textMuted}>{"   No chats"}</text>}
       {visible.map((chat, visIdx) => {
         const idx = clampedOffset + visIdx;
@@ -164,6 +210,7 @@ export const ChatsPanel = React.memo(function ChatsPanel({
             cursor={cursor}
             focused={focused}
             innerWidth={innerWidth}
+            chatListStyle={chatListStyle}
           />
         );
       })}
@@ -188,6 +235,8 @@ interface ChatEntryProps {
   readonly focused: boolean;
   /** Available inner width. */
   readonly innerWidth: number;
+  /** Chat list layout density. */
+  readonly chatListStyle: ChatListStyle;
 }
 
 /**
@@ -198,17 +247,39 @@ interface ChatEntryProps {
  * @param root0.cursor - Current cursor position.
  * @param root0.focused - Whether the panel has focus.
  * @param root0.innerWidth - Available inner width for rendering.
+ * @param root0.chatListStyle - Chat list layout density.
  * @returns The rendered chat entry element.
  */
-function ChatEntry({ chat, index, cursor, focused, innerWidth }: ChatEntryProps): React.ReactNode {
+function ChatEntry({
+  chat,
+  index,
+  cursor,
+  focused,
+  innerWidth,
+  chatListStyle,
+}: ChatEntryProps): React.ReactNode {
   const theme = useTheme();
   const isSelected = index === cursor;
-  const prefix = isSelected && focused ? " \u25b8 " : "   ";
+  const prefix = isSelected && focused ? " \u25cf " : "   ";
+  const isComfortable = chatListStyle === ChatListStyle.Comfortable;
 
-  const maxPreview = Math.max(innerWidth - 4, 10);
-  const preview = truncate(chat.lastMessage, maxPreview);
   const timeStr = relativeTime(chat.lastMessageTime);
   const avatar = chatAvatar(chat.name);
+
+  /* Avatar badge width: 2 cols for compact (square on 1 row), 6 cols for comfortable (square on 3 rows). */
+  const avatarWidth = isComfortable ? AVATAR_COLS_COMFORTABLE : AVATAR_COLS_COMPACT;
+
+  /** Characters consumed by prefix (3) + avatar + space (1). */
+  const fixedCols = 3 + avatarWidth + 1;
+
+  /* Build indicators suffix to measure its width. */
+  let indicators = "";
+  if (chat.pinned) indicators += " \u2605";
+  if (chat.muted) indicators += " \u223c";
+  if (chat.unreadCount > 0) indicators += ` (${chat.unreadCount})`;
+
+  const maxName = Math.max(innerWidth - fixedCols - indicators.length, 4);
+  const displayName = truncate(chat.name, maxName);
 
   let nameColor: string = theme.text;
   let nameBold = false;
@@ -220,6 +291,62 @@ function ChatEntry({ chat, index, cursor, focused, innerWidth }: ChatEntryProps)
     nameBold = true;
   }
 
+  /** Spacer matching prefix width (3 chars). */
+  const linePrefix = "   ";
+  /** Spacer matching avatar + gap width. */
+  const avatarSpacer = " ".repeat(avatarWidth + 1);
+
+  if (isComfortable) {
+    /** Comfortable: 3 lines. Avatar block is 6-wide x 3-tall square. Initials on line 2. */
+    const maxPreview = Math.max(innerWidth - fixedCols, 4);
+    const preview = truncate(chat.lastMessage, maxPreview);
+    /** Pad initials to fill the avatar width (e.g. " AL " for 6-wide becomes "  AL  "). */
+    const initialsStr = avatar.initials
+      .padStart(Math.floor((avatarWidth + avatar.initials.length) / 2))
+      .padEnd(avatarWidth);
+
+    return (
+      <box flexDirection="column">
+        <text>
+          <span fg={isSelected && focused ? theme.primary : theme.textMuted}>{prefix}</span>
+          <span bg={avatar.color}>{" ".repeat(avatarWidth)}</span>
+          <span> </span>
+          <span fg={nameColor} attributes={nameBold ? TextAttributes.BOLD : undefined}>
+            {displayName}
+          </span>
+          {chat.pinned && <span fg={theme.pinnedIndicator}>{" \u2605"}</span>}
+          {chat.muted && <span fg={theme.mutedIndicator}>{" \u223c"}</span>}
+          {chat.unreadCount > 0 && (
+            <span attributes={TextAttributes.BOLD} fg={theme.unreadBadge}>
+              {" "}
+              ({chat.unreadCount})
+            </span>
+          )}
+        </text>
+        <text>
+          <span>{linePrefix}</span>
+          <span bg={avatar.color} fg="#1e1e2e" attributes={TextAttributes.BOLD}>
+            {initialsStr}
+          </span>
+          <span fg={theme.textMuted}> {preview}</span>
+        </text>
+        <text>
+          <span>{linePrefix}</span>
+          <span bg={avatar.color}>{" ".repeat(avatarWidth)}</span>
+          <span fg={theme.textMuted}> {timeStr}</span>
+        </text>
+        <text> </text>
+      </box>
+    );
+  }
+
+  /** Compact: 2 lines — name line has avatar (2 cols), preview line has no avatar. */
+  const timeSuffix = ` \u00b7 ${timeStr}`;
+  /** Preview line: prefix + avatar spacer + preview + time. */
+  const previewFixedCols = 3 + avatarWidth + 1;
+  const maxPreview = Math.max(innerWidth - previewFixedCols - timeSuffix.length, 4);
+  const preview = truncate(chat.lastMessage, maxPreview);
+
   return (
     <box flexDirection="column">
       <text>
@@ -229,7 +356,7 @@ function ChatEntry({ chat, index, cursor, focused, innerWidth }: ChatEntryProps)
         </span>
         <span> </span>
         <span fg={nameColor} attributes={nameBold ? TextAttributes.BOLD : undefined}>
-          {chat.name}
+          {displayName}
         </span>
         {chat.pinned && <span fg={theme.pinnedIndicator}>{" \u2605"}</span>}
         {chat.muted && <span fg={theme.mutedIndicator}>{" \u223c"}</span>}
@@ -240,9 +367,13 @@ function ChatEntry({ chat, index, cursor, focused, innerWidth }: ChatEntryProps)
           </span>
         )}
       </text>
-      <text fg={theme.textMuted}>
-        {"   "}
-        {preview} {"\u00b7"} <span fg={theme.timestamp}>{timeStr}</span>
+      <text>
+        <span>{linePrefix}</span>
+        <span>{avatarSpacer}</span>
+        <span fg={theme.textMuted}>
+          {preview}
+          {timeSuffix}
+        </span>
       </text>
     </box>
   );
