@@ -1,7 +1,7 @@
 // Copyright (c) 2026 lazybeeper by Ronen Druker.
 
 import React, { useState } from "react";
-import { Box, Text } from "ink";
+import { TextAttributes } from "@opentui/core";
 import type { Account } from "../../domain/types.js";
 import { ALL_ACCOUNTS_ID } from "../../domain/types.js";
 import { useTheme } from "../theme/context.js";
@@ -30,7 +30,7 @@ export const AccountsPanel = React.memo(function AccountsPanel({
   width,
   height,
   cursor,
-}: AccountsPanelProps): React.ReactElement {
+}: AccountsPanelProps): React.ReactNode {
   const theme = useTheme();
   const [offset, setOffset] = useState(0);
 
@@ -57,16 +57,17 @@ export const AccountsPanel = React.memo(function AccountsPanel({
   const borderColor = focused ? theme.borderActive : theme.border;
 
   return (
-    <Box
+    <box
       flexDirection="column"
       width={width}
       height={height}
-      borderStyle="round"
+      border={true}
+      borderStyle="rounded"
       borderColor={borderColor}
     >
-      <Text bold color={theme.primary}>
+      <text attributes={TextAttributes.BOLD} fg={theme.primary}>
         {" Accounts [1]"}
-      </Text>
+      </text>
       {visible.map((acct, visIdx) => {
         const idx = clampedOffset + visIdx;
         return (
@@ -81,11 +82,11 @@ export const AccountsPanel = React.memo(function AccountsPanel({
         );
       })}
       {accounts.length > usableSlots && (
-        <Text color={theme.textMuted}>
+        <text fg={theme.textMuted}>
           {"   "}[{clampedOffset + 1}-{end} of {accounts.length}]
-        </Text>
+        </text>
       )}
-    </Box>
+    </box>
   );
 });
 
@@ -121,7 +122,7 @@ function AccountLine({
   cursor,
   focused,
   isLast,
-}: AccountLineProps): React.ReactElement {
+}: AccountLineProps): React.ReactNode {
   const theme = useTheme();
   const isSelected = index === cursor;
   const isAllAccount = account.id === ALL_ACCOUNTS_ID;
@@ -142,12 +143,12 @@ function AccountLine({
   if (isAllAccount) {
     const indicator = isSelected && focused ? "\u25b8 " : "  ";
     return (
-      <Text>
-        <Text color={theme.primary}> {indicator}</Text>
-        <Text color={nameColor} bold={bold}>
+      <text>
+        <span fg={theme.primary}> {indicator}</span>
+        <span fg={nameColor} attributes={bold ? TextAttributes.BOLD : undefined}>
           {account.name}
-        </Text>
-      </Text>
+        </span>
+      </text>
     );
   }
 
@@ -156,17 +157,18 @@ function AccountLine({
   const dotColor = account.connected ? theme.connected : theme.disconnected;
 
   return (
-    <Text>
-      <Text color={theme.borderSubtle}>
+    <text>
+      <span fg={theme.borderSubtle}>
         {" "}
         {branch}
         {indicator}
-      </Text>
-      <Text color={dotColor}>{"\u25cf"}</Text>{" "}
-      <Text color={nameColor} bold={bold}>
+      </span>
+      <span fg={dotColor}>{"\u25cf"}</span>
+      <span> </span>
+      <span fg={nameColor} attributes={bold ? TextAttributes.BOLD : undefined}>
         {account.name}
-      </Text>
-    </Text>
+      </span>
+    </text>
   );
 }
 

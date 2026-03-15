@@ -1,8 +1,7 @@
 // Copyright (c) 2026 lazybeeper by Ronen Druker.
 
-import React from "react";
 import { describe, it, expect } from "vitest";
-import { render } from "ink-testing-library";
+import { render } from "../../helpers/render.js";
 import { MessagesPanel } from "../../../src/ui/panel/messages-panel.js";
 import type { Message } from "../../../src/domain/types.js";
 
@@ -28,8 +27,8 @@ const mockMessages: Message[] = [
 ];
 
 describe("MessagesPanel", () => {
-  it("renders the title with chat name", () => {
-    const { lastFrame } = render(
+  it("renders the title with chat name", async () => {
+    const rendered = await render(
       <MessagesPanel
         messages={mockMessages}
         chatName="Alice"
@@ -39,11 +38,11 @@ describe("MessagesPanel", () => {
         scrollOffset={0}
       />,
     );
-    expect(lastFrame()).toContain("Alice - [3]");
+    expect(rendered.lastFrame()).toContain("Alice - [3]");
   });
 
-  it("renders default title without chat name", () => {
-    const { lastFrame } = render(
+  it("renders default title without chat name", async () => {
+    const rendered = await render(
       <MessagesPanel
         messages={[]}
         chatName=""
@@ -53,11 +52,11 @@ describe("MessagesPanel", () => {
         scrollOffset={0}
       />,
     );
-    expect(lastFrame()).toContain("Messages [3]");
+    expect(rendered.lastFrame()).toContain("Messages [3]");
   });
 
-  it("renders no messages placeholder", () => {
-    const { lastFrame } = render(
+  it("renders no messages placeholder", async () => {
+    const rendered = await render(
       <MessagesPanel
         messages={[]}
         chatName=""
@@ -67,11 +66,11 @@ describe("MessagesPanel", () => {
         scrollOffset={0}
       />,
     );
-    expect(lastFrame()).toContain("No messages");
+    expect(rendered.lastFrame()).toContain("No messages");
   });
 
-  it("renders message content", () => {
-    const { lastFrame } = render(
+  it("renders message content", async () => {
+    const rendered = await render(
       <MessagesPanel
         messages={mockMessages}
         chatName="Alice"
@@ -81,12 +80,12 @@ describe("MessagesPanel", () => {
         scrollOffset={0}
       />,
     );
-    expect(lastFrame()).toContain("Hey, how are you?");
-    expect(lastFrame()).toContain("I'm good, thanks!");
+    expect(rendered.lastFrame()).toContain("Hey, how are you?");
+    expect(rendered.lastFrame()).toContain("I'm good, thanks!");
   });
 
-  it("renders sender names", () => {
-    const { lastFrame } = render(
+  it("renders sender names", async () => {
+    const rendered = await render(
       <MessagesPanel
         messages={mockMessages}
         chatName="Alice"
@@ -96,12 +95,12 @@ describe("MessagesPanel", () => {
         scrollOffset={0}
       />,
     );
-    expect(lastFrame()).toContain("Alice");
-    expect(lastFrame()).toContain("You");
+    expect(rendered.lastFrame()).toContain("Alice");
+    expect(rendered.lastFrame()).toContain("You");
   });
 
-  it("renders date separator", () => {
-    const { lastFrame } = render(
+  it("renders date separator", async () => {
+    const rendered = await render(
       <MessagesPanel
         messages={mockMessages}
         chatName="Alice"
@@ -112,11 +111,11 @@ describe("MessagesPanel", () => {
       />,
     );
     /* The date separator uses horizontal line characters. */
-    expect(lastFrame()).toContain("\u2500");
+    expect(rendered.lastFrame()).toContain("\u2500");
   });
 
-  it("renders with focus", () => {
-    const { lastFrame } = render(
+  it("renders with focus", async () => {
+    const rendered = await render(
       <MessagesPanel
         messages={mockMessages}
         chatName="Alice"
@@ -126,10 +125,10 @@ describe("MessagesPanel", () => {
         scrollOffset={0}
       />,
     );
-    expect(lastFrame()).toBeDefined();
+    expect(rendered.lastFrame()).toBeDefined();
   });
 
-  it("handles scrollOffset", () => {
+  it("handles scrollOffset", async () => {
     const manyMessages: Message[] = Array.from({ length: 30 }, (_, idx) => ({
       id: `m${idx}`,
       chatId: "chat1",
@@ -139,7 +138,7 @@ describe("MessagesPanel", () => {
       isFromMe: idx % 2 === 1,
     }));
 
-    const { lastFrame } = render(
+    const rendered = await render(
       <MessagesPanel
         messages={manyMessages}
         chatName="Alice"
@@ -149,11 +148,11 @@ describe("MessagesPanel", () => {
         scrollOffset={5}
       />,
     );
-    expect(lastFrame()).toBeDefined();
+    expect(rendered.lastFrame()).toBeDefined();
   });
 
-  it("handles small dimensions", () => {
-    const { lastFrame } = render(
+  it("handles small dimensions", async () => {
+    const rendered = await render(
       <MessagesPanel
         messages={mockMessages}
         chatName="Alice"
@@ -163,10 +162,10 @@ describe("MessagesPanel", () => {
         scrollOffset={0}
       />,
     );
-    expect(lastFrame()).toBeDefined();
+    expect(rendered.lastFrame()).toBeDefined();
   });
 
-  it("skips null entries in messages array", () => {
+  it("skips null entries in messages array", async () => {
     /* Create a sparse array with a null-ish gap to exercise the null guard. */
     const sparseMessages: Message[] = [
       {
@@ -189,7 +188,7 @@ describe("MessagesPanel", () => {
       isFromMe: false,
     };
 
-    const { lastFrame } = render(
+    const rendered = await render(
       <MessagesPanel
         messages={sparseMessages}
         chatName="Test"
@@ -199,11 +198,11 @@ describe("MessagesPanel", () => {
         scrollOffset={0}
       />,
     );
-    expect(lastFrame()).toContain("First message");
-    expect(lastFrame()).toContain("Third message");
+    expect(rendered.lastFrame()).toContain("First message");
+    expect(rendered.lastFrame()).toContain("Third message");
   });
 
-  it("renders messages across different days", () => {
+  it("renders messages across different days", async () => {
     const yesterday = new Date(now);
     yesterday.setDate(yesterday.getDate() - 1);
 
@@ -226,7 +225,7 @@ describe("MessagesPanel", () => {
       },
     ];
 
-    const { lastFrame } = render(
+    const rendered = await render(
       <MessagesPanel
         messages={crossDayMessages}
         chatName="Alice"
@@ -236,6 +235,6 @@ describe("MessagesPanel", () => {
         scrollOffset={0}
       />,
     );
-    expect(lastFrame()).toContain("Today");
+    expect(rendered.lastFrame()).toContain("Today");
   });
 });

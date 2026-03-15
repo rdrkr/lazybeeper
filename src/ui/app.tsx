@@ -1,7 +1,7 @@
 // Copyright (c) 2026 lazybeeper by Ronen Druker.
 
 import React, { useState, useCallback, useEffect, useRef, useMemo } from "react";
-import { Box, Text, useInput, useStdout } from "ink";
+import { useKeyboard, useTerminalDimensions } from "@opentui/react";
 import type { Repository } from "../domain/repository.js";
 import { useAppState, PopupType } from "./viewmodel/use-app-state.js";
 import { PanelFocus } from "./viewmodel/context.js";
@@ -56,22 +56,26 @@ interface AppProps {
   readonly theme: Theme;
   /** Selection behavior for accounts and chats panels. */
   readonly selectionMode: SelectionMode;
+  /** Callback to cleanly shut down the application. */
+  readonly onQuit: () => void;
 }
 
 /**
- * App is the root Ink component. It handles keyboard routing,
+ * App is the root component. It handles keyboard routing,
  * manages panel focus, and renders the layout.
  * @param root0 - The component props.
  * @param root0.repo - Data repository for fetching accounts, chats, messages.
  * @param root0.theme - Initial color theme.
  * @param root0.selectionMode - Selection behavior for accounts and chats panels.
+ * @param root0.onQuit - Callback to cleanly shut down the application.
  * @returns The rendered App component.
  */
 export function App({
   repo,
   theme: initialTheme,
   selectionMode: initialSelectionMode,
-}: AppProps): React.ReactElement {
+  onQuit,
+}: AppProps): React.ReactNode {
   const { state, dispatch, goNextPanel, goPrevPanel, goLeftPanel, goRightPanel } =
     useAppState(repo);
 
@@ -105,9 +109,7 @@ export function App({
   );
 
   /* Terminal dimensions. */
-  const { stdout } = useStdout();
-  const termWidth = stdout.columns;
-  const termHeight = stdout.rows;
+  const { width: termWidth, height: termHeight } = useTerminalDimensions();
 
   /* Track previous dimensions to avoid dispatching on every render. */
   const prevDimsRef = useRef({ width: 0, height: 0 });
@@ -206,20 +208,19 @@ export function App({
     [state.confirmAction, state.confirmData, state.activeAccountId, repo, dispatch],
   );
 
-  /* --- Key handlers (defined before useInput) --- */
+  /* --- Key handlers (defined before useKeyboard) --- */
 
   /**
    * Handles keyboard input when the Search popup is active.
-   * @param input - The raw input string from the keyboard.
    * @param key - Metadata about the key press.
    */
   const handleSearchKeys = useCallback(
-    (input: string, key: KeyInfo): void => {
-      if (isEscapeKey(input, key)) {
+    (key: KeyInfo): void => {
+      if (isEscapeKey(key)) {
         setSearchQuery("");
         setSearchCursor(0);
         dispatch({ type: "close_popup" });
-      } else if (isEnterKey(input, key)) {
+      } else if (isEnterKey(key)) {
         if (searchFiltered.length > 0) {
           const selected = searchFiltered[searchCursor];
           if (selected) {
@@ -228,11 +229,11 @@ export function App({
             dispatch({ type: "search_result_selected", chat: selected });
           }
         }
-      } else if (isDownKey(input, key) || (key.ctrl && input === "n")) {
+      } else if (isDownKey(key) || (key.ctrl && key.name === "n")) {
         if (searchCursor < searchFiltered.length - 1) {
           setSearchCursor(searchCursor + 1);
         }
-      } else if (isUpKey(input, key) || (key.ctrl && input === "p")) {
+      } else if (isUpKey(key) || (key.ctrl && key.name === "p")) {
         if (searchCursor > 0) {
           setSearchCursor(searchCursor - 1);
         }
@@ -243,12 +244,11 @@ export function App({
 
   /**
    * Handles keyboard input when the Help popup is active.
-   * @param input - The raw input string from the keyboard.
    * @param key - Metadata about the key press.
    */
   const handleHelpKeys = useCallback(
-    (input: string, key: KeyInfo): void => {
-      if (isEscapeKey(input, key) || isHelpKey(input)) {
+    (key: KeyInfo): void => {
+      if (isEscapeKey(key) || isHelpKey(key)) {
         dispatch({ type: "close_popup" });
       }
     },
@@ -258,17 +258,16 @@ export function App({
   /**
    * Handles keyboard input when the Theme popup is active.
    * Previews theme on cursor move, saves on Enter, reverts on Esc.
-   * @param input - The raw input string from the keyboard.
    * @param key - Metadata about the key press.
    */
   const handleThemeKeys = useCallback(
-    (input: string, key: KeyInfo): void => {
+    (key: KeyInfo): void => {
       const themeCount = getThemeNames().length;
 
-      if (isEscapeKey(input, key)) {
+      if (isEscapeKey(key)) {
         setActiveTheme(savedTheme);
         dispatch({ type: "close_popup" });
-      } else if (isEnterKey(input, key)) {
+      } else if (isEnterKey(key)) {
         const selected = getThemeAtCursor(themeCursor);
         if (selected) {
           const theme = resolveTheme(selected);
@@ -277,22 +276,22 @@ export function App({
           updateConfigFileKey("theme", selected);
           dispatch({ type: "theme_selected", themeName: selected });
         }
-      } else if (isDownKey(input, key)) {
+      } else if (isDownKey(key)) {
         if (themeCursor < themeCount - 1) {
           const next = themeCursor + 1;
           setThemeCursor(next);
           previewThemeAtCursor(next);
         }
-      } else if (isUpKey(input, key)) {
+      } else if (isUpKey(key)) {
         if (themeCursor > 0) {
           const next = themeCursor - 1;
           setThemeCursor(next);
           previewThemeAtCursor(next);
         }
-      } else if (isTopKey(input)) {
+      } else if (isTopKey(key)) {
         setThemeCursor(0);
         previewThemeAtCursor(0);
-      } else if (isBottomKey(input)) {
+      } else if (isBottomKey(key)) {
         const last = themeCount - 1;
         setThemeCursor(last);
         previewThemeAtCursor(last);
@@ -304,22 +303,21 @@ export function App({
   /**
    * Handles keyboard input when the Config popup is active.
    * Navigates config entries, opens sub-popups, or toggles values.
-   * @param input - The raw input string from the keyboard.
    * @param key - Metadata about the key press.
    */
   const handleConfigKeys = useCallback(
-    (input: string, key: KeyInfo): void => {
-      if (isEscapeKey(input, key)) {
+    (key: KeyInfo): void => {
+      if (isEscapeKey(key)) {
         dispatch({ type: "close_popup" });
-      } else if (isDownKey(input, key)) {
+      } else if (isDownKey(key)) {
         if (configCursor < CONFIG_ENTRY_COUNT - 1) {
           setConfigCursor(configCursor + 1);
         }
-      } else if (isUpKey(input, key)) {
+      } else if (isUpKey(key)) {
         if (configCursor > 0) {
           setConfigCursor(configCursor - 1);
         }
-      } else if (isEnterKey(input, key)) {
+      } else if (isEnterKey(key)) {
         if (configCursor === 0) {
           /* Theme entry — open theme popup. */
           const names = getThemeNames();
@@ -342,15 +340,14 @@ export function App({
 
   /**
    * Handles keyboard input when the Confirm popup is active.
-   * @param input - The raw input string from the keyboard.
    * @param key - Metadata about the key press.
    */
   const handleConfirmKeys = useCallback(
-    (input: string, key: KeyInfo): void => {
-      if (isEscapeKey(input, key) || isNoKey(input)) {
+    (key: KeyInfo): void => {
+      if (isEscapeKey(key) || isNoKey(key)) {
         setConfirmSelected(1);
         dispatch({ type: "close_popup" });
-      } else if (isYesKey(input)) {
+      } else if (isYesKey(key)) {
         setConfirmSelected(1);
         dispatch({
           type: "confirm_result",
@@ -359,7 +356,7 @@ export function App({
           data: state.confirmData,
         });
         handleConfirmAction(true);
-      } else if (isEnterKey(input, key)) {
+      } else if (isEnterKey(key)) {
         const confirmed = confirmSelected === 0;
         setConfirmSelected(1);
         dispatch({
@@ -371,20 +368,15 @@ export function App({
         if (confirmed) {
           handleConfirmAction(true);
         }
-      } else if (isLeftKey(input) || key.leftArrow) {
+      } else if (isLeftKey(key) || key.name === "left") {
         setConfirmSelected(0);
-      } else if (isRightKey(input) || key.rightArrow) {
+      } else if (isRightKey(key) || key.name === "right") {
         setConfirmSelected(1);
       }
     },
     [confirmSelected, state.confirmAction, state.confirmData, dispatch, handleConfirmAction],
   );
 
-  /**
-   * Handles keyboard input when the Accounts panel is focused.
-   * @param input - The raw input string from the keyboard.
-   * @param key - Metadata about the key press.
-   */
   /**
    * Selects the account at the given cursor index.
    * @param cursor - The cursor index.
@@ -401,36 +393,35 @@ export function App({
 
   /**
    * Handles keyboard input when the Accounts panel is focused.
-   * @param input - The raw input string from the keyboard.
    * @param key - Metadata about the key press.
    */
   const handleAccountsKeys = useCallback(
-    (input: string, key: KeyInfo): void => {
+    (key: KeyInfo): void => {
       const nav = selectionMode === SelectionMode.Navigate;
-      if (isDownKey(input, key) && accountsCursor < state.accounts.length - 1) {
+      if (isDownKey(key) && accountsCursor < state.accounts.length - 1) {
         const next = accountsCursor + 1;
         setAccountsCursor(next);
         if (nav) {
           selectAccountAtCursor(next);
         }
-      } else if (isUpKey(input, key) && accountsCursor > 0) {
+      } else if (isUpKey(key) && accountsCursor > 0) {
         const next = accountsCursor - 1;
         setAccountsCursor(next);
         if (nav) {
           selectAccountAtCursor(next);
         }
-      } else if (isTopKey(input)) {
+      } else if (isTopKey(key)) {
         setAccountsCursor(0);
         if (nav) {
           selectAccountAtCursor(0);
         }
-      } else if (isBottomKey(input) && state.accounts.length > 0) {
+      } else if (isBottomKey(key) && state.accounts.length > 0) {
         const last = state.accounts.length - 1;
         setAccountsCursor(last);
         if (nav) {
           selectAccountAtCursor(last);
         }
-      } else if (isEnterKey(input, key) && state.accounts.length > 0) {
+      } else if (isEnterKey(key) && state.accounts.length > 0) {
         selectAccountAtCursor(accountsCursor);
         dispatch({ type: "set_focus", focus: PanelFocus.Chats });
       }
@@ -438,11 +429,6 @@ export function App({
     [accountsCursor, state.accounts, selectionMode, selectAccountAtCursor, dispatch],
   );
 
-  /**
-   * Handles keyboard input when the Chats panel is focused.
-   * @param input - The raw input string from the keyboard.
-   * @param key - Metadata about the key press.
-   */
   /**
    * Selects the chat at the given cursor index.
    * @param cursor - The cursor index.
@@ -474,38 +460,37 @@ export function App({
 
   /**
    * Handles keyboard input when the Chats panel is focused.
-   * @param input - The raw input string from the keyboard.
    * @param key - Metadata about the key press.
    */
   const handleChatsKeys = useCallback(
-    (input: string, key: KeyInfo): void => {
+    (key: KeyInfo): void => {
       const nav = selectionMode === SelectionMode.Navigate;
-      if (isDownKey(input, key) && chatsCursor < state.chats.length - 1) {
+      if (isDownKey(key) && chatsCursor < state.chats.length - 1) {
         const next = chatsCursor + 1;
         setChatsCursor(next);
         if (nav) {
           previewChatAtCursor(next);
         }
-      } else if (isUpKey(input, key) && chatsCursor > 0) {
+      } else if (isUpKey(key) && chatsCursor > 0) {
         const next = chatsCursor - 1;
         setChatsCursor(next);
         if (nav) {
           previewChatAtCursor(next);
         }
-      } else if (isTopKey(input)) {
+      } else if (isTopKey(key)) {
         setChatsCursor(0);
         if (nav) {
           previewChatAtCursor(0);
         }
-      } else if (isBottomKey(input) && state.chats.length > 0) {
+      } else if (isBottomKey(key) && state.chats.length > 0) {
         const last = state.chats.length - 1;
         setChatsCursor(last);
         if (nav) {
           previewChatAtCursor(last);
         }
-      } else if (isEnterKey(input, key) && state.chats.length > 0) {
+      } else if (isEnterKey(key) && state.chats.length > 0) {
         selectChatAtCursor(chatsCursor);
-      } else if (isArchiveKey(input) && state.chats.length > 0) {
+      } else if (isArchiveKey(key) && state.chats.length > 0) {
         const chat = state.chats[chatsCursor];
         if (chat) {
           const action = chat.muted ? ChatAction.Unarchive : ChatAction.Archive;
@@ -517,12 +502,12 @@ export function App({
             data: chat.id,
           });
         }
-      } else if (isMuteKey(input) && state.chats.length > 0) {
+      } else if (isMuteKey(key) && state.chats.length > 0) {
         const chat = state.chats[chatsCursor];
         if (chat) {
           dispatch({ type: "toggle_mute", chatId: chat.id });
         }
-      } else if (isPinKey(input) && state.chats.length > 0) {
+      } else if (isPinKey(key) && state.chats.length > 0) {
         const chat = state.chats[chatsCursor];
         if (chat) {
           dispatch({ type: "toggle_pin", chatId: chat.id });
@@ -534,20 +519,19 @@ export function App({
 
   /**
    * Handles keyboard input when the Messages panel is focused.
-   * @param input - The raw input string from the keyboard.
    * @param key - Metadata about the key press.
    */
   const handleMessagesKeys = useCallback(
-    (input: string, key: KeyInfo): void => {
-      if (isDownKey(input, key)) {
+    (key: KeyInfo): void => {
+      if (isDownKey(key)) {
         setMessagesScroll(messagesScroll + 1);
-      } else if (isUpKey(input, key)) {
+      } else if (isUpKey(key)) {
         setMessagesScroll(Math.max(messagesScroll - 1, 0));
-      } else if (isTopKey(input)) {
+      } else if (isTopKey(key)) {
         setMessagesScroll(0);
-      } else if (isBottomKey(input)) {
+      } else if (isBottomKey(key)) {
         setMessagesScroll(Number.MAX_SAFE_INTEGER);
-      } else if (isEnterKey(input, key)) {
+      } else if (isEnterKey(key)) {
         dispatch({ type: "focus_input" });
       }
     },
@@ -555,44 +539,43 @@ export function App({
   );
 
   /* Keyboard input handler. */
-  useInput((input: string, key: KeyInfo) => {
+  useKeyboard((key: KeyInfo) => {
     /* Route to popup handlers first. */
     if (state.activePopup === PopupType.Search) {
-      handleSearchKeys(input, key);
+      handleSearchKeys(key);
       return;
     }
 
     if (state.activePopup === PopupType.Help) {
-      handleHelpKeys(input, key);
+      handleHelpKeys(key);
       return;
     }
 
     if (state.activePopup === PopupType.Confirm) {
-      handleConfirmKeys(input, key);
+      handleConfirmKeys(key);
       return;
     }
 
     if (state.activePopup === PopupType.Theme) {
-      handleThemeKeys(input, key);
+      handleThemeKeys(key);
       return;
     }
 
     if (state.activePopup === PopupType.Config) {
-      handleConfigKeys(input, key);
+      handleConfigKeys(key);
       return;
     }
 
     /*
-     * When the Input panel is focused, TextInput handles character input.
-     * We only intercept Escape and Tab here to avoid double re-renders
-     * from both useInput and TextInput processing the same keystroke.
+     * When the Input panel is focused, the <input> element handles character input.
+     * We only intercept Escape and Tab here to avoid double-processing.
      */
     if (state.focus === PanelFocus.Input) {
-      if (isEscapeKey(input, key)) {
+      if (isEscapeKey(key)) {
         dispatch({ type: "set_focus", focus: PanelFocus.Messages });
         return;
       }
-      if (isTabKey(input, key) || isShiftTabKey(input, key)) {
+      if (isTabKey(key) || isShiftTabKey(key)) {
         if (key.shift) {
           goPrevPanel();
         } else {
@@ -603,60 +586,64 @@ export function App({
     }
 
     /* Global keys (not in input mode). */
-    if (isQuitKey(input)) {
-      process.exit(0);
+    if (isQuitKey(key)) {
+      onQuit();
     }
 
-    if (isInterruptKey(input, key)) {
+    if (isInterruptKey(key)) {
       const now = Date.now();
       if (now - lastInterruptRef.current < INTERRUPT_WINDOW_MS) {
-        process.exit(0);
+        onQuit();
       }
       lastInterruptRef.current = now;
-      dispatch({ type: "error", error: "Press Ctrl-C again to quit" });
+      dispatch({
+        type: "error",
+        error: "Press Ctrl-C again to quit",
+        duration: INTERRUPT_WINDOW_MS,
+      });
       return;
     }
 
-    if (isSearchKey(input)) {
+    if (isSearchKey(key)) {
       setSearchQuery("");
       setSearchCursor(0);
       dispatch({ type: "show_search" });
       return;
     }
 
-    if (isHelpKey(input)) {
+    if (isHelpKey(key)) {
       dispatch({ type: "show_help" });
       return;
     }
 
-    if (isConfigKey(input)) {
+    if (isConfigKey(key)) {
       setConfigCursor(0);
       dispatch({ type: "show_config" });
       return;
     }
 
-    if (isReloadConfigKey(input)) {
+    if (isReloadConfigKey(key)) {
       reloadConfig();
       return;
     }
 
-    if (isLeftKey(input)) {
+    if (isLeftKey(key)) {
       goLeftPanel();
       return;
     }
 
-    if (isRightKey(input)) {
+    if (isRightKey(key)) {
       goRightPanel();
       return;
     }
 
-    const jumpPanel = getJumpPanel(input);
+    const jumpPanel = getJumpPanel(key);
     if (jumpPanel !== null) {
       dispatch({ type: "set_focus", focus: jumpPanel as PanelFocus });
       return;
     }
 
-    if (isTabKey(input, key)) {
+    if (isTabKey(key)) {
       if (key.shift) {
         goPrevPanel();
       } else {
@@ -665,7 +652,7 @@ export function App({
       return;
     }
 
-    if (isShiftTabKey(input, key)) {
+    if (isShiftTabKey(key)) {
       goPrevPanel();
       return;
     }
@@ -673,13 +660,13 @@ export function App({
     /* Panel-specific keys. */
     switch (state.focus) {
       case PanelFocus.Accounts:
-        handleAccountsKeys(input, key);
+        handleAccountsKeys(key);
         break;
       case PanelFocus.Chats:
-        handleChatsKeys(input, key);
+        handleChatsKeys(key);
         break;
       case PanelFocus.Messages:
-        handleMessagesKeys(input, key);
+        handleMessagesKeys(key);
         break;
     }
   });
@@ -689,7 +676,7 @@ export function App({
   if (!state.ready) {
     return (
       <ThemeProvider value={activeTheme}>
-        <Text color={activeTheme.textMuted}>Loading lazybeeper...</Text>
+        <text fg={activeTheme.textMuted}>Loading lazybeeper...</text>
       </ThemeProvider>
     );
   }
@@ -698,11 +685,11 @@ export function App({
    * Renders the active popup as an overlay on top of the main view.
    * @returns The popup element or null if no popup is active.
    */
-  function renderPopup(): React.ReactElement | null {
+  function renderPopup(): React.ReactNode {
     switch (state.activePopup) {
       case PopupType.Search:
         return (
-          <Box position="absolute" marginLeft={0} marginTop={0}>
+          <box position="absolute" top={0} left={0}>
             <SearchPopup
               chats={state.chats}
               query={searchQuery}
@@ -718,19 +705,19 @@ export function App({
               width={layout.totalWidth}
               height={layout.totalHeight}
             />
-          </Box>
+          </box>
         );
 
       case PopupType.Help:
         return (
-          <Box position="absolute" marginLeft={0} marginTop={0}>
+          <box position="absolute" top={0} left={0}>
             <HelpPopup width={layout.totalWidth} height={layout.totalHeight} />
-          </Box>
+          </box>
         );
 
       case PopupType.Confirm:
         return (
-          <Box position="absolute" marginLeft={0} marginTop={0}>
+          <box position="absolute" top={0} left={0}>
             <ConfirmPopup
               message={state.confirmMessage}
               action={state.confirmAction}
@@ -749,24 +736,24 @@ export function App({
               width={layout.totalWidth}
               height={layout.totalHeight}
             />
-          </Box>
+          </box>
         );
 
       case PopupType.Theme:
         return (
-          <Box position="absolute" marginLeft={0} marginTop={0}>
+          <box position="absolute" top={0} left={0}>
             <ThemePopup
               cursor={themeCursor}
               activeTheme={activeTheme.name}
               width={layout.totalWidth}
               height={layout.totalHeight}
             />
-          </Box>
+          </box>
         );
 
       case PopupType.Config:
         return (
-          <Box position="absolute" marginLeft={0} marginTop={0}>
+          <box position="absolute" top={0} left={0}>
             <ConfigPopup
               cursor={configCursor}
               currentTheme={activeTheme.name}
@@ -774,7 +761,7 @@ export function App({
               width={layout.totalWidth}
               height={layout.totalHeight}
             />
-          </Box>
+          </box>
         );
 
       default:
@@ -784,10 +771,10 @@ export function App({
 
   return (
     <ThemeProvider value={activeTheme}>
-      <Box flexDirection="column" width={layout.totalWidth} height={layout.totalHeight}>
-        <Box flexDirection="row">
+      <box flexDirection="column" width={layout.totalWidth} height={layout.totalHeight}>
+        <box flexDirection="row">
           {/* Sidebar */}
-          <Box flexDirection="column" width={layout.sidebarWidth}>
+          <box flexDirection="column" width={layout.sidebarWidth}>
             <AccountsPanel
               accounts={state.accounts}
               focused={state.focus === PanelFocus.Accounts}
@@ -803,9 +790,9 @@ export function App({
               cursor={chatsCursor}
               top={layout.accountsHeight}
             />
-          </Box>
+          </box>
           {/* Main area */}
-          <Box flexDirection="column" width={layout.mainWidth}>
+          <box flexDirection="column" width={layout.mainWidth}>
             <MessagesPanel
               messages={state.messages}
               chatName={state.activeChatName}
@@ -819,11 +806,11 @@ export function App({
               width={layout.mainWidth}
               height={layout.inputHeight}
               value={inputValue}
-              onChange={setInputValue}
+              onInput={setInputValue}
               onSubmit={handleSendMessage}
             />
-          </Box>
-        </Box>
+          </box>
+        </box>
         <StatusBar
           width={layout.totalWidth}
           focus={state.focus}
@@ -831,9 +818,10 @@ export function App({
           isMock={state.isMock}
           errorMessage={state.errorMessage}
           errorTime={state.errorTime}
+          errorDuration={state.errorDuration}
         />
         {renderPopup()}
-      </Box>
+      </box>
     </ThemeProvider>
   );
 }

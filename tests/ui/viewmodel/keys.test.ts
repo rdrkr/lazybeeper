@@ -31,315 +31,326 @@ const emptyKey: KeyInfo = {};
 
 describe("isQuitKey", () => {
   it("returns true for 'q'", () => {
-    expect(isQuitKey("q")).toBe(true);
+    expect(isQuitKey({ name: "q" })).toBe(true);
   });
 
   it("returns false for other keys", () => {
-    expect(isQuitKey("a")).toBe(false);
+    expect(isQuitKey({ name: "a" })).toBe(false);
   });
 
   it("returns false for 'c'", () => {
-    expect(isQuitKey("c")).toBe(false);
+    expect(isQuitKey({ name: "c" })).toBe(false);
   });
 });
 
 describe("isInterruptKey", () => {
   it("returns true for ctrl+c", () => {
-    expect(isInterruptKey("c", { ctrl: true })).toBe(true);
+    expect(isInterruptKey({ name: "c", ctrl: true })).toBe(true);
   });
 
   it("returns false for 'c' without ctrl", () => {
-    expect(isInterruptKey("c", emptyKey)).toBe(false);
+    expect(isInterruptKey({ name: "c" })).toBe(false);
   });
 
   it("returns false for ctrl with non-c input", () => {
-    expect(isInterruptKey("a", { ctrl: true })).toBe(false);
+    expect(isInterruptKey({ name: "a", ctrl: true })).toBe(false);
   });
 });
 
 describe("isTabKey", () => {
   it("returns true for tab without shift", () => {
-    expect(isTabKey("", { tab: true })).toBe(true);
+    expect(isTabKey({ name: "tab" })).toBe(true);
   });
 
   it("returns false for shift+tab", () => {
-    expect(isTabKey("", { tab: true, shift: true })).toBe(false);
+    expect(isTabKey({ name: "tab", shift: true })).toBe(false);
   });
 
   it("returns false when tab is not pressed", () => {
-    expect(isTabKey("", emptyKey)).toBe(false);
+    expect(isTabKey(emptyKey)).toBe(false);
   });
 
-  it("returns false when tab is false", () => {
-    expect(isTabKey("", { tab: false })).toBe(false);
+  it("returns false when a different key is pressed", () => {
+    expect(isTabKey({ name: "space" })).toBe(false);
   });
 });
 
 describe("isShiftTabKey", () => {
   it("returns true for shift+tab", () => {
-    expect(isShiftTabKey("", { shift: true, tab: true })).toBe(true);
+    expect(isShiftTabKey({ name: "tab", shift: true })).toBe(true);
   });
 
   it("returns false for tab without shift", () => {
-    expect(isShiftTabKey("", { tab: true })).toBe(false);
+    expect(isShiftTabKey({ name: "tab" })).toBe(false);
   });
 
   it("returns false for shift without tab", () => {
-    expect(isShiftTabKey("", { shift: true })).toBe(false);
+    expect(isShiftTabKey({ shift: true })).toBe(false);
   });
 
   it("returns false when neither pressed", () => {
-    expect(isShiftTabKey("", emptyKey)).toBe(false);
+    expect(isShiftTabKey(emptyKey)).toBe(false);
   });
 
-  it("returns false when shift is false and tab is false", () => {
-    expect(isShiftTabKey("", { shift: false, tab: false })).toBe(false);
+  it("returns false when shift is false and key is not tab", () => {
+    expect(isShiftTabKey({ name: "space", shift: false })).toBe(false);
   });
 });
 
 describe("isLeftKey", () => {
   it("returns true for 'h'", () => {
-    expect(isLeftKey("h")).toBe(true);
+    expect(isLeftKey({ name: "h" })).toBe(true);
   });
 
   it("returns false for other keys", () => {
-    expect(isLeftKey("l")).toBe(false);
-    expect(isLeftKey("a")).toBe(false);
+    expect(isLeftKey({ name: "l" })).toBe(false);
+    expect(isLeftKey({ name: "a" })).toBe(false);
   });
 });
 
 describe("isRightKey", () => {
   it("returns true for 'l'", () => {
-    expect(isRightKey("l")).toBe(true);
+    expect(isRightKey({ name: "l" })).toBe(true);
   });
 
   it("returns false for other keys", () => {
-    expect(isRightKey("h")).toBe(false);
-    expect(isRightKey("a")).toBe(false);
+    expect(isRightKey({ name: "h" })).toBe(false);
+    expect(isRightKey({ name: "a" })).toBe(false);
   });
 });
 
 describe("isUpKey", () => {
   it("returns true for 'k'", () => {
-    expect(isUpKey("k", emptyKey)).toBe(true);
+    expect(isUpKey({ name: "k" })).toBe(true);
   });
 
   it("returns true for up arrow", () => {
-    expect(isUpKey("", { upArrow: true })).toBe(true);
+    expect(isUpKey({ name: "up" })).toBe(true);
   });
 
   it("returns false for other keys", () => {
-    expect(isUpKey("j", emptyKey)).toBe(false);
+    expect(isUpKey({ name: "j" })).toBe(false);
   });
 
-  it("returns false when upArrow is false", () => {
-    expect(isUpKey("a", { upArrow: false })).toBe(false);
+  it("returns false for unrelated key", () => {
+    expect(isUpKey({ name: "a" })).toBe(false);
   });
 });
 
 describe("isDownKey", () => {
   it("returns true for 'j'", () => {
-    expect(isDownKey("j", emptyKey)).toBe(true);
+    expect(isDownKey({ name: "j" })).toBe(true);
   });
 
   it("returns true for down arrow", () => {
-    expect(isDownKey("", { downArrow: true })).toBe(true);
+    expect(isDownKey({ name: "down" })).toBe(true);
   });
 
   it("returns false for other keys", () => {
-    expect(isDownKey("k", emptyKey)).toBe(false);
+    expect(isDownKey({ name: "k" })).toBe(false);
   });
 
-  it("returns false when downArrow is false", () => {
-    expect(isDownKey("a", { downArrow: false })).toBe(false);
+  it("returns false for unrelated key", () => {
+    expect(isDownKey({ name: "a" })).toBe(false);
   });
 });
 
 describe("isEnterKey", () => {
   it("returns true for return key", () => {
-    expect(isEnterKey("", { return: true })).toBe(true);
+    expect(isEnterKey({ name: "return" })).toBe(true);
   });
 
   it("returns false when return is not pressed", () => {
-    expect(isEnterKey("", emptyKey)).toBe(false);
+    expect(isEnterKey(emptyKey)).toBe(false);
   });
 
-  it("returns false when return is false", () => {
-    expect(isEnterKey("", { return: false })).toBe(false);
+  it("returns false for a different key", () => {
+    expect(isEnterKey({ name: "space" })).toBe(false);
   });
 });
 
 describe("isEscapeKey", () => {
   it("returns true for escape key", () => {
-    expect(isEscapeKey("", { escape: true })).toBe(true);
+    expect(isEscapeKey({ name: "escape" })).toBe(true);
   });
 
   it("returns false when escape is not pressed", () => {
-    expect(isEscapeKey("", emptyKey)).toBe(false);
+    expect(isEscapeKey(emptyKey)).toBe(false);
   });
 
-  it("returns false when escape is false", () => {
-    expect(isEscapeKey("", { escape: false })).toBe(false);
+  it("returns false for a different key", () => {
+    expect(isEscapeKey({ name: "space" })).toBe(false);
   });
 });
 
 describe("isSearchKey", () => {
   it("returns true for '/'", () => {
-    expect(isSearchKey("/")).toBe(true);
+    expect(isSearchKey({ name: "/" })).toBe(true);
   });
 
   it("returns false for other keys", () => {
-    expect(isSearchKey("a")).toBe(false);
-    expect(isSearchKey("\\")).toBe(false);
+    expect(isSearchKey({ name: "a" })).toBe(false);
+    expect(isSearchKey({ name: "\\" })).toBe(false);
   });
 });
 
 describe("isHelpKey", () => {
   it("returns true for '?'", () => {
-    expect(isHelpKey("?")).toBe(true);
+    expect(isHelpKey({ name: "?" })).toBe(true);
+  });
+
+  it("returns true for shift+'/'", () => {
+    expect(isHelpKey({ name: "/", shift: true })).toBe(true);
+  });
+
+  it("returns false for '/' without shift", () => {
+    expect(isHelpKey({ name: "/" })).toBe(false);
   });
 
   it("returns false for other keys", () => {
-    expect(isHelpKey("/")).toBe(false);
-    expect(isHelpKey("h")).toBe(false);
+    expect(isHelpKey({ name: "h" })).toBe(false);
   });
 });
 
 describe("getJumpPanel", () => {
   it("returns 0 for '1'", () => {
-    expect(getJumpPanel("1")).toBe(0);
+    expect(getJumpPanel({ name: "1" })).toBe(0);
   });
 
   it("returns 1 for '2'", () => {
-    expect(getJumpPanel("2")).toBe(1);
+    expect(getJumpPanel({ name: "2" })).toBe(1);
   });
 
   it("returns 2 for '3'", () => {
-    expect(getJumpPanel("3")).toBe(2);
+    expect(getJumpPanel({ name: "3" })).toBe(2);
   });
 
   it("returns 3 for '4'", () => {
-    expect(getJumpPanel("4")).toBe(3);
+    expect(getJumpPanel({ name: "4" })).toBe(3);
   });
 
   it("returns null for '0'", () => {
-    expect(getJumpPanel("0")).toBeNull();
+    expect(getJumpPanel({ name: "0" })).toBeNull();
   });
 
   it("returns null for '5'", () => {
-    expect(getJumpPanel("5")).toBeNull();
+    expect(getJumpPanel({ name: "5" })).toBeNull();
   });
 
   it("returns null for non-numeric input", () => {
-    expect(getJumpPanel("a")).toBeNull();
+    expect(getJumpPanel({ name: "a" })).toBeNull();
   });
 
-  it("returns null for empty string", () => {
-    expect(getJumpPanel("")).toBeNull();
+  it("returns null for empty key", () => {
+    expect(getJumpPanel(emptyKey)).toBeNull();
   });
 });
 
 describe("isTopKey", () => {
   it("returns true for 'g'", () => {
-    expect(isTopKey("g")).toBe(true);
+    expect(isTopKey({ name: "g" })).toBe(true);
   });
 
   it("returns false for 'G'", () => {
-    expect(isTopKey("G")).toBe(false);
+    expect(isTopKey({ name: "G" })).toBe(false);
   });
 
   it("returns false for other keys", () => {
-    expect(isTopKey("a")).toBe(false);
+    expect(isTopKey({ name: "a" })).toBe(false);
   });
 });
 
 describe("isBottomKey", () => {
   it("returns true for 'G'", () => {
-    expect(isBottomKey("G")).toBe(true);
+    expect(isBottomKey({ name: "G" })).toBe(true);
   });
 
-  it("returns false for 'g'", () => {
-    expect(isBottomKey("g")).toBe(false);
+  it("returns true for shift+'g'", () => {
+    expect(isBottomKey({ name: "g", shift: true })).toBe(true);
+  });
+
+  it("returns false for 'g' without shift", () => {
+    expect(isBottomKey({ name: "g" })).toBe(false);
   });
 
   it("returns false for other keys", () => {
-    expect(isBottomKey("a")).toBe(false);
+    expect(isBottomKey({ name: "a" })).toBe(false);
   });
 });
 
 describe("isArchiveKey", () => {
   it("returns true for 'a'", () => {
-    expect(isArchiveKey("a")).toBe(true);
+    expect(isArchiveKey({ name: "a" })).toBe(true);
   });
 
   it("returns false for other keys", () => {
-    expect(isArchiveKey("A")).toBe(false);
-    expect(isArchiveKey("b")).toBe(false);
+    expect(isArchiveKey({ name: "A" })).toBe(false);
+    expect(isArchiveKey({ name: "b" })).toBe(false);
   });
 });
 
 describe("isMuteKey", () => {
   it("returns true for 'm'", () => {
-    expect(isMuteKey("m")).toBe(true);
+    expect(isMuteKey({ name: "m" })).toBe(true);
   });
 
   it("returns false for other keys", () => {
-    expect(isMuteKey("M")).toBe(false);
-    expect(isMuteKey("n")).toBe(false);
+    expect(isMuteKey({ name: "M" })).toBe(false);
+    expect(isMuteKey({ name: "n" })).toBe(false);
   });
 });
 
 describe("isPinKey", () => {
   it("returns true for 'p'", () => {
-    expect(isPinKey("p")).toBe(true);
+    expect(isPinKey({ name: "p" })).toBe(true);
   });
 
   it("returns false for other keys", () => {
-    expect(isPinKey("P")).toBe(false);
-    expect(isPinKey("q")).toBe(false);
+    expect(isPinKey({ name: "P" })).toBe(false);
+    expect(isPinKey({ name: "q" })).toBe(false);
   });
 });
 
 describe("isYesKey", () => {
   it("returns true for 'y'", () => {
-    expect(isYesKey("y")).toBe(true);
+    expect(isYesKey({ name: "y" })).toBe(true);
   });
 
   it("returns false for other keys", () => {
-    expect(isYesKey("Y")).toBe(false);
-    expect(isYesKey("n")).toBe(false);
+    expect(isYesKey({ name: "Y" })).toBe(false);
+    expect(isYesKey({ name: "n" })).toBe(false);
   });
 });
 
 describe("isNoKey", () => {
   it("returns true for 'n'", () => {
-    expect(isNoKey("n")).toBe(true);
+    expect(isNoKey({ name: "n" })).toBe(true);
   });
 
   it("returns false for other keys", () => {
-    expect(isNoKey("N")).toBe(false);
-    expect(isNoKey("y")).toBe(false);
+    expect(isNoKey({ name: "N" })).toBe(false);
+    expect(isNoKey({ name: "y" })).toBe(false);
   });
 });
 
 describe("isConfigKey", () => {
   it("returns true for 'c'", () => {
-    expect(isConfigKey("c")).toBe(true);
+    expect(isConfigKey({ name: "c" })).toBe(true);
   });
 
   it("returns false for other keys", () => {
-    expect(isConfigKey("C")).toBe(false);
-    expect(isConfigKey("t")).toBe(false);
+    expect(isConfigKey({ name: "C" })).toBe(false);
+    expect(isConfigKey({ name: "t" })).toBe(false);
   });
 });
 
 describe("isReloadConfigKey", () => {
   it("returns true for 'r'", () => {
-    expect(isReloadConfigKey("r")).toBe(true);
+    expect(isReloadConfigKey({ name: "r" })).toBe(true);
   });
 
   it("returns false for other keys", () => {
-    expect(isReloadConfigKey("R")).toBe(false);
-    expect(isReloadConfigKey("a")).toBe(false);
+    expect(isReloadConfigKey({ name: "R" })).toBe(false);
+    expect(isReloadConfigKey({ name: "a" })).toBe(false);
   });
 });

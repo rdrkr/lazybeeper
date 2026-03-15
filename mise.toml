@@ -30,7 +30,7 @@ bunx tsc
 
 [tasks.run]
 description = "Run the application (mock mode by default)"
-run = "bunx tsx src/index.tsx --token ''"
+run = "bun run src/index.tsx --token ''"
 
 [tasks.clean]
 description = "Clean build artifacts"

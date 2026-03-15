@@ -1,8 +1,7 @@
 // Copyright (c) 2026 lazybeeper by Ronen Druker.
 
 import React from "react";
-import { Box, Text } from "ink";
-import TextInput from "ink-text-input";
+import { TextAttributes } from "@opentui/core";
 import { useTheme } from "../theme/context.js";
 
 /** Props for the InputPanel component. */
@@ -15,8 +14,11 @@ interface InputPanelProps {
   readonly height: number;
   /** Current input value. */
   readonly value: string;
-  /** Callback when input value changes. */
-  readonly onChange: (value: string) => void;
+  /**
+   * Callback fired on every keystroke to keep React state in sync.
+   * Wired to OpenTUI's `onInput` event (not `onChange`, which only fires on blur).
+   */
+  readonly onInput: (value: string) => void;
   /** Callback when enter is pressed. */
   readonly onSubmit: (value: string) => void;
 }
@@ -30,35 +32,43 @@ export const InputPanel = React.memo(function InputPanel({
   width,
   height,
   value,
-  onChange,
+  onInput,
   onSubmit,
-}: InputPanelProps): React.ReactElement {
+}: InputPanelProps): React.ReactNode {
   const theme = useTheme();
   const borderColor = focused ? theme.borderActive : theme.border;
 
   return (
-    <Box
+    <box
       flexDirection="column"
       width={width}
       height={height}
-      borderStyle="round"
+      border={true}
+      borderStyle="rounded"
       borderColor={borderColor}
     >
-      <Text bold color={theme.primary}>
+      <text attributes={TextAttributes.BOLD} fg={theme.primary}>
         {" Input [4]"}
-      </Text>
-      <Box>
+      </text>
+      <box>
         {focused ? (
-          <TextInput
+          <input
+            focused={focused}
             value={value}
-            onChange={onChange}
-            onSubmit={onSubmit}
+            onInput={onInput}
+            /*
+             * OpenTUI emits onSubmit(string) at runtime, but the JSX type is
+             * an intersection of three conflicting signatures (DOM SubmitEvent,
+             * Textarea SubmitEvent, and InputProps string). Cast required.
+             */
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-assignment
+            onSubmit={onSubmit as any}
             placeholder="Type a message..."
           />
         ) : (
-          <Text color={theme.textMuted}>{value || "Type a message..."}</Text>
+          <text fg={theme.textMuted}>{value || "Type a message..."}</text>
         )}
-      </Box>
-    </Box>
+      </box>
+    </box>
   );
 });

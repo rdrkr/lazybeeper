@@ -1,13 +1,13 @@
 // Copyright (c) 2026 lazybeeper by Ronen Druker.
 
 import React, { useEffect, useState } from "react";
-import { Box, Text } from "ink";
+import { TextAttributes } from "@opentui/core";
 import { useTheme } from "../theme/context.js";
 import { panelFocusName } from "../viewmodel/context.js";
 import type { PanelFocus } from "../viewmodel/context.js";
 
-/** How long errors are shown before auto-clearing (ms). */
-const ERROR_DISPLAY_DURATION = 10_000;
+/** Default duration errors are shown before auto-clearing (ms). */
+const DEFAULT_ERROR_DURATION = 10_000;
 
 /** Interval for checking error expiry (ms). */
 const ERROR_CHECK_INTERVAL = 1_000;
@@ -26,6 +26,8 @@ interface StatusBarProps {
   readonly errorMessage: string;
   /** Timestamp when the error was set. */
   readonly errorTime: number;
+  /** Duration in ms after which the error auto-clears (0 = default 10s). */
+  readonly errorDuration: number;
 }
 
 /**
@@ -39,10 +41,15 @@ export const StatusBar = React.memo(function StatusBar({
   isMock,
   errorMessage,
   errorTime,
-}: StatusBarProps): React.ReactElement {
+  errorDuration,
+}: StatusBarProps): React.ReactNode {
   const theme = useTheme();
   const [now, setNow] = useState<number>(Date.now);
 
+  /** Effective duration: use provided value or fall back to the default. */
+  const effectiveDuration = errorDuration > 0 ? errorDuration : DEFAULT_ERROR_DURATION;
+
+  /* v8 ignore start -- timer re-render is exercised via SSR re-rendering with fake Date.now */
   useEffect(() => {
     if (errorMessage === "") {
       return;
@@ -54,8 +61,9 @@ export const StatusBar = React.memo(function StatusBar({
       clearInterval(id);
     };
   }, [errorMessage, errorTime]);
+  /* v8 ignore stop */
 
-  const isErrorExpired = errorMessage !== "" && now - errorTime > ERROR_DISPLAY_DURATION;
+  const isErrorExpired = errorMessage !== "" && now - errorTime > effectiveDuration;
   const activeError = errorMessage && !isErrorExpired ? errorMessage : "";
 
   const leftParts = [
@@ -71,40 +79,40 @@ export const StatusBar = React.memo(function StatusBar({
   const modeColor = isMock ? theme.textWarning : theme.textSuccess;
 
   return (
-    <Box width={width} height={1}>
-      <Box flexGrow={1}>
-        <Text backgroundColor={theme.statusBarBackground}>
+    <box width={width} height={1} flexDirection="row">
+      <box flexGrow={1}>
+        <text bg={theme.statusBarBackground}>
           {" "}
           {leftParts.map((part, idx) => (
             <React.Fragment key={part.key}>
               {idx > 0 && " "}
-              <Text bold color={theme.statusBarKey}>
+              <span attributes={TextAttributes.BOLD} fg={theme.statusBarKey}>
                 {part.key}
-              </Text>{" "}
-              <Text color={theme.statusBarText}>{part.desc}</Text>
+              </span>{" "}
+              <span fg={theme.statusBarText}>{part.desc}</span>
             </React.Fragment>
           ))}
-        </Text>
-      </Box>
-      <Box>
-        <Text backgroundColor={theme.statusBarBackground}>
+        </text>
+      </box>
+      <box>
+        <text bg={theme.statusBarBackground}>
           {activeError ? (
-            <Text bold color={theme.textError}>
+            <span attributes={TextAttributes.BOLD} fg={theme.textError}>
               {"\u26a0 "}
               {activeError}
-            </Text>
+            </span>
           ) : (
             <>
-              <Text bold color={modeColor}>
+              <span attributes={TextAttributes.BOLD} fg={modeColor}>
                 {modeLabel}
-              </Text>
-              <Text color={theme.borderSubtle}>{" \u2502 "}</Text>
-              {chatName && <Text color={theme.textMuted}>{chatName} </Text>}
-              <Text color={theme.statusBarText}>{panelFocusName(focus)}</Text>
+              </span>
+              <span fg={theme.borderSubtle}>{" \u2502 "}</span>
+              {chatName && <span fg={theme.textMuted}>{chatName} </span>}
+              <span fg={theme.statusBarText}>{panelFocusName(focus)}</span>
             </>
           )}{" "}
-        </Text>
-      </Box>
-    </Box>
+        </text>
+      </box>
+    </box>
   );
 });

@@ -1,8 +1,8 @@
 // Copyright (c) 2026 lazybeeper by Ronen Druker.
+// @vitest-environment jsdom
 
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { render } from "ink-testing-library";
-import { Text } from "ink";
+import { render } from "../../../helpers/render.js";
 import { useAppState } from "../../../../src/ui/viewmodel/use-app-state.js";
 import type { UseAppStateReturn } from "../../../../src/ui/viewmodel/use-app-state.js";
 import type { Repository } from "../../../../src/domain/repository.js";
@@ -105,12 +105,12 @@ let hookResult: UseAppStateReturn;
  * Wrapper component that renders the hook and exposes its return value.
  * @param props - Component props.
  * @param props.repo - The repository to pass to useAppState.
- * @returns A Text element showing the current focus.
+ * @returns A text element showing the current focus.
  */
-function HookWrapper({ repo }: { readonly repo: Repository }): React.JSX.Element {
+function HookWrapper({ repo }: { readonly repo: Repository }): React.ReactNode {
   const result = useAppState(repo);
   hookResult = result;
-  return <Text>{result.state.focus.toString()}</Text>;
+  return <text>{result.state.focus.toString()}</text>;
 }
 
 /**
@@ -133,7 +133,7 @@ describe("useAppState hook", () => {
   describe("initialization", () => {
     it("initializes state and creates a Poller", async () => {
       const repo = createMockRepo();
-      const inst = render(<HookWrapper repo={repo} />);
+      const inst = await render(<HookWrapper repo={repo} />);
       expect(hookResult.state.isMock).toBe(false);
       expect(hookResult.poller).toBeDefined();
       expect(hookResult.dispatch).toBeTypeOf("function");
@@ -143,7 +143,7 @@ describe("useAppState hook", () => {
 
     it("passes useMock result to createInitialState", async () => {
       const repo = createMockRepo({ useMock: true });
-      const inst = render(<HookWrapper repo={repo} />);
+      const inst = await render(<HookWrapper repo={repo} />);
       expect(hookResult.state.isMock).toBe(true);
       expect(hookResult.state.errorMessage).toContain("mock data");
       await flush();
@@ -154,7 +154,7 @@ describe("useAppState hook", () => {
   describe("fetch accounts on mount", () => {
     it("calls fetchAccounts and dispatches accounts_loaded", async () => {
       const repo = createMockRepo({ accounts: [testAccount] });
-      const inst = render(<HookWrapper repo={repo} />);
+      const inst = await render(<HookWrapper repo={repo} />);
       await flush();
       expect(repo.fetchAccounts).toHaveBeenCalledTimes(1);
       expect(hookResult.state.accounts).toHaveLength(2);
@@ -166,7 +166,7 @@ describe("useAppState hook", () => {
 
     it("dispatches error when fetchAccounts rejects", async () => {
       const repo = createMockRepo({ fetchAccountsError: new Error("net fail") });
-      const inst = render(<HookWrapper repo={repo} />);
+      const inst = await render(<HookWrapper repo={repo} />);
       await flush();
       expect(hookResult.state.errorMessage).toContain("net fail");
       inst.unmount();
@@ -176,7 +176,7 @@ describe("useAppState hook", () => {
   describe("fetch chats when activeAccountId changes", () => {
     it("calls fetchChats after accounts loaded", async () => {
       const repo = createMockRepo({ accounts: [testAccount], chats: [testChat] });
-      const inst = render(<HookWrapper repo={repo} />);
+      const inst = await render(<HookWrapper repo={repo} />);
       await flush();
       expect(repo.fetchChats).toHaveBeenCalledWith(ALL_ACCOUNTS_ID);
       expect(hookResult.state.chats).toEqual([testChat]);
@@ -185,7 +185,7 @@ describe("useAppState hook", () => {
 
     it("fetches chats for All account even with empty real accounts", async () => {
       const repo = createMockRepo({ accounts: [], chats: [] });
-      const inst = render(<HookWrapper repo={repo} />);
+      const inst = await render(<HookWrapper repo={repo} />);
       await flush();
       expect(repo.fetchChats).toHaveBeenCalledWith(ALL_ACCOUNTS_ID);
       inst.unmount();
@@ -196,7 +196,7 @@ describe("useAppState hook", () => {
         accounts: [testAccount],
         fetchChatsError: new Error("chat fail"),
       });
-      const inst = render(<HookWrapper repo={repo} />);
+      const inst = await render(<HookWrapper repo={repo} />);
       await flush();
       expect(hookResult.state.errorMessage).toContain("chat fail");
       inst.unmount();
@@ -210,7 +210,7 @@ describe("useAppState hook", () => {
         chats: [testChat],
         messages: [testMessage],
       });
-      const inst = render(<HookWrapper repo={repo} />);
+      const inst = await render(<HookWrapper repo={repo} />);
       await flush();
       expect(repo.fetchMessages).toHaveBeenCalledWith("chat1");
       expect(hookResult.state.messages).toEqual([testMessage]);
@@ -219,7 +219,7 @@ describe("useAppState hook", () => {
 
     it("skips fetchMessages when no active chat", async () => {
       const repo = createMockRepo({ accounts: [testAccount], chats: [] });
-      const inst = render(<HookWrapper repo={repo} />);
+      const inst = await render(<HookWrapper repo={repo} />);
       await flush();
       expect(repo.fetchMessages).not.toHaveBeenCalled();
       inst.unmount();
@@ -231,7 +231,7 @@ describe("useAppState hook", () => {
         chats: [testChat],
         fetchMessagesError: new Error("msg fail"),
       });
-      const inst = render(<HookWrapper repo={repo} />);
+      const inst = await render(<HookWrapper repo={repo} />);
       await flush();
       expect(hookResult.state.errorMessage).toContain("msg fail");
       inst.unmount();
@@ -241,7 +241,7 @@ describe("useAppState hook", () => {
   describe("navigation callbacks", () => {
     it("goNextPanel moves to next panel", async () => {
       const repo = createMockRepo();
-      const inst = render(<HookWrapper repo={repo} />);
+      const inst = await render(<HookWrapper repo={repo} />);
       await flush();
       hookResult.goNextPanel();
       await flush();
@@ -251,7 +251,7 @@ describe("useAppState hook", () => {
 
     it("goPrevPanel moves to previous panel", async () => {
       const repo = createMockRepo();
-      const inst = render(<HookWrapper repo={repo} />);
+      const inst = await render(<HookWrapper repo={repo} />);
       await flush();
       hookResult.goNextPanel();
       await flush();
@@ -267,7 +267,7 @@ describe("useAppState hook", () => {
         chats: [testChat],
         messages: [testMessage],
       });
-      const inst = render(<HookWrapper repo={repo} />);
+      const inst = await render(<HookWrapper repo={repo} />);
       await flush();
       hookResult.dispatch({ type: "set_focus", focus: PanelFocus.Messages });
       await flush();
@@ -283,7 +283,7 @@ describe("useAppState hook", () => {
         chats: [testChat],
         messages: [testMessage],
       });
-      const inst = render(<HookWrapper repo={repo} />);
+      const inst = await render(<HookWrapper repo={repo} />);
       await flush();
       hookResult.dispatch({ type: "set_focus", focus: PanelFocus.Chats });
       await flush();
@@ -297,7 +297,7 @@ describe("useAppState hook", () => {
   describe("return value", () => {
     it("returns all expected fields", async () => {
       const repo = createMockRepo();
-      const inst = render(<HookWrapper repo={repo} />);
+      const inst = await render(<HookWrapper repo={repo} />);
       await flush();
       expect(hookResult.state).toBeDefined();
       expect(hookResult.dispatch).toBeTypeOf("function");
@@ -341,7 +341,7 @@ describe("useAppState polling", () => {
       chats: [testChat],
       messages: [testMessage],
     });
-    const inst = render(<HookWrapper repo={repo} />);
+    const inst = await render(<HookWrapper repo={repo} />);
     await settle();
 
     const before = (repo.fetchChats as ReturnType<typeof vi.fn>).mock.calls.length;
@@ -358,7 +358,7 @@ describe("useAppState polling", () => {
       chats: [testChat],
       messages: [testMessage],
     });
-    const inst = render(<HookWrapper repo={repo} />);
+    const inst = await render(<HookWrapper repo={repo} />);
     await settle();
 
     const before = (repo.fetchMessages as ReturnType<typeof vi.fn>).mock.calls.length;
@@ -371,7 +371,7 @@ describe("useAppState polling", () => {
 
   it("polls chats for All account even with no real accounts", async () => {
     const repo = createMockRepo({ accounts: [], chats: [] });
-    const inst = render(<HookWrapper repo={repo} />);
+    const inst = await render(<HookWrapper repo={repo} />);
     await settle();
     expect(repo.fetchChats).toHaveBeenCalledWith(ALL_ACCOUNTS_ID);
     inst.unmount();
@@ -379,7 +379,7 @@ describe("useAppState polling", () => {
 
   it("skips message polling when no active chat", async () => {
     const repo = createMockRepo({ accounts: [testAccount], chats: [] });
-    const inst = render(<HookWrapper repo={repo} />);
+    const inst = await render(<HookWrapper repo={repo} />);
     await settle();
     expect(repo.fetchMessages).not.toHaveBeenCalled();
     await vi.advanceTimersByTimeAsync(10_000);
@@ -401,7 +401,7 @@ describe("useAppState polling", () => {
       }
       return Promise.resolve([testChat]);
     });
-    const inst = render(<HookWrapper repo={repo} />);
+    const inst = await render(<HookWrapper repo={repo} />);
     await settle();
     await vi.advanceTimersByTimeAsync(5_500);
     expect(hookResult.state.errorMessage).toContain("poll err");
@@ -422,7 +422,7 @@ describe("useAppState polling", () => {
       }
       return Promise.resolve([testMessage]);
     });
-    const inst = render(<HookWrapper repo={repo} />);
+    const inst = await render(<HookWrapper repo={repo} />);
     await settle();
     await vi.advanceTimersByTimeAsync(5_500);
     expect(hookResult.state.errorMessage).toContain("msg poll err");
@@ -436,7 +436,7 @@ describe("useAppState polling", () => {
       chats: [testChat],
       messages: [testMessage],
     });
-    const inst = render(<HookWrapper repo={repo} />);
+    const inst = await render(<HookWrapper repo={repo} />);
     await settle();
 
     hookResult.poller.setEnabled(false);
@@ -460,7 +460,7 @@ describe("useAppState polling", () => {
       chats: [testChat],
       messages: [testMessage],
     });
-    const inst = render(<HookWrapper repo={repo} />);
+    const inst = await render(<HookWrapper repo={repo} />);
     await settle();
 
     hookResult.poller.setEnabled(false);
@@ -482,7 +482,7 @@ describe("useAppState polling", () => {
       chats: [testChat],
       messages: [testMessage],
     });
-    const inst = render(<HookWrapper repo={repo} />);
+    const inst = await render(<HookWrapper repo={repo} />);
     await settle();
 
     inst.unmount();

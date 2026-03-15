@@ -6,225 +6,221 @@
  */
 
 /**
- * Checks if the input matches the quit key (q).
- * @param input - The raw input string.
- * @returns True if the key is the quit key.
+ * KeyInfo represents the metadata about a key press from OpenTUI's useKeyboard hook.
+ * All fields are optional to allow partial fixture objects in tests.
  */
-export function isQuitKey(input: string): boolean {
-  return input === "q";
+export interface KeyInfo {
+  /** Key name: "a", "up", "down", "left", "right", "return", "escape", "tab", etc. */
+  readonly name?: string;
+  /** Whether the Ctrl modifier was held. */
+  readonly ctrl?: boolean;
+  /** Whether the Shift modifier was held. */
+  readonly shift?: boolean;
+  /** Whether the Meta/Alt modifier was held. */
+  readonly meta?: boolean;
 }
 
 /**
- * Checks if the input matches the interrupt key (ctrl+c).
- * @param input - The raw input string.
+ * Checks if the key matches the quit key (q).
+ * @param key - Metadata about the key press.
+ * @returns True if the key is the quit key.
+ */
+export function isQuitKey(key: KeyInfo): boolean {
+  return key.name === "q";
+}
+
+/**
+ * Checks if the key matches the interrupt key (ctrl+c).
  * @param key - Metadata about the key press.
  * @returns True if the key is Ctrl+C.
  */
-export function isInterruptKey(input: string, key: KeyInfo): boolean {
-  return key.ctrl === true && input === "c";
+export function isInterruptKey(key: KeyInfo): boolean {
+  return key.ctrl === true && key.name === "c";
 }
 
 /**
- * Checks if the input matches the tab key (without shift).
- * @param _input - The raw input string (unused).
+ * Checks if the key matches the tab key (without shift).
  * @param key - Metadata about the key press.
  * @returns True if the key is Tab without Shift.
  */
-export function isTabKey(_input: string, key: KeyInfo): boolean {
-  return key.tab === true && !key.shift;
+export function isTabKey(key: KeyInfo): boolean {
+  return key.name === "tab" && !key.shift;
 }
 
 /**
- * Checks if the input matches shift+tab.
- * @param _input - The raw input string (unused).
+ * Checks if the key matches shift+tab.
  * @param key - Metadata about the key press.
  * @returns True if the key is Shift+Tab.
  */
-export function isShiftTabKey(_input: string, key: KeyInfo): boolean {
-  return (key.shift ?? false) && (key.tab ?? false);
+export function isShiftTabKey(key: KeyInfo): boolean {
+  return (key.shift ?? false) && key.name === "tab";
 }
 
 /**
- * Checks if the input matches a left movement key (h).
- * @param input - The raw input string.
+ * Checks if the key matches a left movement key (h).
+ * @param key - Metadata about the key press.
  * @returns True if the key is a left movement key.
  */
-export function isLeftKey(input: string): boolean {
-  return input === "h";
+export function isLeftKey(key: KeyInfo): boolean {
+  return key.name === "h";
 }
 
 /**
- * Checks if the input matches a right movement key (l).
- * @param input - The raw input string.
+ * Checks if the key matches a right movement key (l).
+ * @param key - Metadata about the key press.
  * @returns True if the key is a right movement key.
  */
-export function isRightKey(input: string): boolean {
-  return input === "l";
+export function isRightKey(key: KeyInfo): boolean {
+  return key.name === "l";
 }
 
 /**
- * Checks if the input matches an up movement key (k or up arrow).
- * @param input - The raw input string.
+ * Checks if the key matches an up movement key (k or up arrow).
  * @param key - Metadata about the key press.
  * @returns True if the key is an up movement key.
  */
-export function isUpKey(input: string, key: KeyInfo): boolean {
-  return input === "k" || key.upArrow === true;
+export function isUpKey(key: KeyInfo): boolean {
+  return key.name === "k" || key.name === "up";
 }
 
 /**
- * Checks if the input matches a down movement key (j or down arrow).
- * @param input - The raw input string.
+ * Checks if the key matches a down movement key (j or down arrow).
  * @param key - Metadata about the key press.
  * @returns True if the key is a down movement key.
  */
-export function isDownKey(input: string, key: KeyInfo): boolean {
-  return input === "j" || key.downArrow === true;
+export function isDownKey(key: KeyInfo): boolean {
+  return key.name === "j" || key.name === "down";
 }
 
 /**
- * Checks if the input matches the enter/return key.
- * @param _input - The raw input string (unused).
+ * Checks if the key matches the enter/return key.
  * @param key - Metadata about the key press.
  * @returns True if the key is Enter/Return.
  */
-export function isEnterKey(_input: string, key: KeyInfo): boolean {
-  return key.return === true;
+export function isEnterKey(key: KeyInfo): boolean {
+  return key.name === "return";
 }
 
 /**
- * Checks if the input matches the escape key.
- * @param _input - The raw input string (unused).
+ * Checks if the key matches the escape key.
  * @param key - Metadata about the key press.
  * @returns True if the key is Escape.
  */
-export function isEscapeKey(_input: string, key: KeyInfo): boolean {
-  return key.escape === true;
+export function isEscapeKey(key: KeyInfo): boolean {
+  return key.name === "escape";
 }
 
 /**
- * Checks if the input matches the search key (/).
- * @param input - The raw input string.
+ * Checks if the key matches the search key (/).
+ * Excludes shift+/ (which is ?) to avoid conflict with isHelpKey.
+ * @param key - Metadata about the key press.
  * @returns True if the key is the search key.
  */
-export function isSearchKey(input: string): boolean {
-  return input === "/";
+export function isSearchKey(key: KeyInfo): boolean {
+  return key.name === "/" && !key.shift;
 }
 
 /**
- * Checks if the input matches the help key (?).
- * @param input - The raw input string.
+ * Checks if the key matches the help key (?).
+ * Handles both direct ? and shift+/ representations from different terminals.
+ * @param key - Metadata about the key press.
  * @returns True if the key is the help key.
  */
-export function isHelpKey(input: string): boolean {
-  return input === "?";
+export function isHelpKey(key: KeyInfo): boolean {
+  return key.name === "?" || (key.name === "/" && key.shift === true);
 }
 
 /**
- * Checks if the input matches a jump-to-panel key (1-4).
- * @param input - The raw input string.
+ * Checks if the key matches a jump-to-panel key (1-4).
+ * @param key - Metadata about the key press.
  * @returns The zero-based panel index, or null if not a jump key.
  */
-export function getJumpPanel(input: string): number | null {
-  if (input >= "1" && input <= "4") {
-    return parseInt(input, 10) - 1;
+export function getJumpPanel(key: KeyInfo): number | null {
+  if (key.name !== undefined && key.name >= "1" && key.name <= "4") {
+    return parseInt(key.name, 10) - 1;
   }
   return null;
 }
 
 /**
- * Checks if the input matches the top key (g).
- * @param input - The raw input string.
+ * Checks if the key matches the top key (g).
+ * Excludes shift+g (which is G) to avoid conflict with isBottomKey.
+ * @param key - Metadata about the key press.
  * @returns True if the key is the top key.
  */
-export function isTopKey(input: string): boolean {
-  return input === "g";
+export function isTopKey(key: KeyInfo): boolean {
+  return key.name === "g" && !key.shift;
 }
 
 /**
- * Checks if the input matches the bottom key (G).
- * @param input - The raw input string.
+ * Checks if the key matches the bottom key (G).
+ * Handles both direct G and shift+g representations from different terminals.
+ * @param key - Metadata about the key press.
  * @returns True if the key is the bottom key.
  */
-export function isBottomKey(input: string): boolean {
-  return input === "G";
+export function isBottomKey(key: KeyInfo): boolean {
+  return key.name === "G" || (key.name === "g" && key.shift === true);
 }
 
 /**
- * Checks if the input matches the archive key (a).
- * @param input - The raw input string.
+ * Checks if the key matches the archive key (a).
+ * @param key - Metadata about the key press.
  * @returns True if the key is the archive key.
  */
-export function isArchiveKey(input: string): boolean {
-  return input === "a";
+export function isArchiveKey(key: KeyInfo): boolean {
+  return key.name === "a";
 }
 
 /**
- * Checks if the input matches the mute key (m).
- * @param input - The raw input string.
+ * Checks if the key matches the mute key (m).
+ * @param key - Metadata about the key press.
  * @returns True if the key is the mute key.
  */
-export function isMuteKey(input: string): boolean {
-  return input === "m";
+export function isMuteKey(key: KeyInfo): boolean {
+  return key.name === "m";
 }
 
 /**
- * Checks if the input matches the pin key (p).
- * @param input - The raw input string.
+ * Checks if the key matches the pin key (p).
+ * @param key - Metadata about the key press.
  * @returns True if the key is the pin key.
  */
-export function isPinKey(input: string): boolean {
-  return input === "p";
+export function isPinKey(key: KeyInfo): boolean {
+  return key.name === "p";
 }
 
 /**
- * Checks if the input matches the yes key (y).
- * @param input - The raw input string.
+ * Checks if the key matches the yes key (y).
+ * @param key - Metadata about the key press.
  * @returns True if the key is the yes key.
  */
-export function isYesKey(input: string): boolean {
-  return input === "y";
+export function isYesKey(key: KeyInfo): boolean {
+  return key.name === "y";
 }
 
 /**
- * Checks if the input matches the no key (n).
- * @param input - The raw input string.
+ * Checks if the key matches the no key (n).
+ * @param key - Metadata about the key press.
  * @returns True if the key is the no key.
  */
-export function isNoKey(input: string): boolean {
-  return input === "n";
+export function isNoKey(key: KeyInfo): boolean {
+  return key.name === "n";
 }
 
 /**
- * Checks if the input matches the config key (c).
- * @param input - The raw input string.
+ * Checks if the key matches the config key (c).
+ * @param key - Metadata about the key press.
  * @returns True if the key is the config key.
  */
-export function isConfigKey(input: string): boolean {
-  return input === "c";
+export function isConfigKey(key: KeyInfo): boolean {
+  return key.name === "c";
 }
 
 /**
- * Checks if the input matches the reload config key (r).
- * @param input - The raw input string.
+ * Checks if the key matches the reload config key (r).
+ * @param key - Metadata about the key press.
  * @returns True if the key is the reload config key.
  */
-export function isReloadConfigKey(input: string): boolean {
-  return input === "r";
-}
-
-/**
- * KeyInfo represents the metadata about a key press from Ink's useInput hook.
- */
-export interface KeyInfo {
-  readonly upArrow?: boolean;
-  readonly downArrow?: boolean;
-  readonly leftArrow?: boolean;
-  readonly rightArrow?: boolean;
-  readonly return?: boolean;
-  readonly escape?: boolean;
-  readonly ctrl?: boolean;
-  readonly shift?: boolean;
-  readonly tab?: boolean;
-  readonly meta?: boolean;
+export function isReloadConfigKey(key: KeyInfo): boolean {
+  return key.name === "r";
 }

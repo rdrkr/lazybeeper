@@ -9,10 +9,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 bunx tsc
 
 # Run (mock mode — no token required)
-bunx tsx src/index.tsx --token ""
+bun run src/index.tsx --token ""
 
 # Run with live API
-bunx tsx src/index.tsx --token <token> --url http://localhost:23373
+bun run src/index.tsx --token <token> --url http://localhost:23373
 
 # Format (required before committing)
 bunx prettier --write 'src/**/*.{ts,tsx}' 'tests/**/*.{ts,tsx}'

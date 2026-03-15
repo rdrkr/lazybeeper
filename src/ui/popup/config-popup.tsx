@@ -1,7 +1,7 @@
 // Copyright (c) 2026 lazybeeper by Ronen Druker.
 
 import React from "react";
-import { Box, Text } from "ink";
+import { TextAttributes } from "@opentui/core";
 import { useTheme } from "../theme/context.js";
 import { SelectionMode } from "../../domain/config-file.js";
 
@@ -58,52 +58,53 @@ export function ConfigPopup({
   selectionMode,
   width,
   height,
-}: ConfigPopupProps): React.ReactElement {
+}: ConfigPopupProps): React.ReactNode {
   const theme = useTheme();
   const boxWidth = Math.min(45, width - 6);
   const entries = buildEntries(currentTheme, selectionMode);
 
   return (
-    <Box
+    <box
       flexDirection="column"
       alignItems="center"
       justifyContent="center"
       width={width}
       height={height}
     >
-      <Box
+      <box
         flexDirection="column"
-        borderStyle="round"
+        border={true}
+        borderStyle="rounded"
         borderColor={theme.borderActive}
         backgroundColor={theme.background}
         paddingX={2}
         paddingY={1}
         width={boxWidth}
       >
-        <Text bold color={theme.primary}>
+        <text attributes={TextAttributes.BOLD} fg={theme.primary}>
           Configuration
-        </Text>
-        <Text>{""}</Text>
+        </text>
+        <text>{""}</text>
         {entries.map((entry, idx) => {
           const isSelected = idx === cursor;
           const indicator = isSelected ? "\u25b8 " : "  ";
           const labelColor = isSelected ? theme.selectedText : theme.text;
 
           return (
-            <Text key={entry.key}>
-              <Text color={isSelected ? theme.primary : theme.textMuted}>{indicator}</Text>
-              <Text color={labelColor} bold={isSelected}>
+            <text key={entry.key}>
+              <span fg={isSelected ? theme.primary : theme.textMuted}>{indicator}</span>
+              <span fg={labelColor} attributes={isSelected ? TextAttributes.BOLD : undefined}>
                 {entry.label}
-              </Text>
-              <Text color={theme.textMuted}>{" \u2014 "}</Text>
-              <Text color={theme.accent}>{entry.value}</Text>
-            </Text>
+              </span>
+              <span fg={theme.textMuted}>{" \u2014 "}</span>
+              <span fg={theme.accent}>{entry.value}</span>
+            </text>
           );
         })}
-        <Text>{""}</Text>
-        <Text color={theme.textMuted}>{"Enter: edit  Esc: close  \u2191/\u2193: navigate"}</Text>
-      </Box>
-    </Box>
+        <text>{""}</text>
+        <text fg={theme.textMuted}>{"Enter: edit  Esc: close  \u2191/\u2193: navigate"}</text>
+      </box>
+    </box>
   );
 }
 

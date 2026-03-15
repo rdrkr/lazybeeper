@@ -1,7 +1,7 @@
 // Copyright (c) 2026 lazybeeper by Ronen Druker.
 
 import React from "react";
-import { Box, Text } from "ink";
+import { TextAttributes } from "@opentui/core";
 import type { Message } from "../../domain/types.js";
 import { useTheme } from "../theme/context.js";
 import { formatTime, dateLabel, sameDay, wrapText } from "../../domain/textutil.js";
@@ -33,7 +33,7 @@ export const MessagesPanel = React.memo(function MessagesPanel({
   width,
   height,
   scrollOffset,
-}: MessagesPanelProps): React.ReactElement {
+}: MessagesPanelProps): React.ReactNode {
   const theme = useTheme();
   const innerWidth = Math.max(width - 2, 0);
   const innerHeight = Math.max(height - 2, 0);
@@ -50,26 +50,27 @@ export const MessagesPanel = React.memo(function MessagesPanel({
   const visibleLines = renderedLines.slice(clampedOffset, clampedOffset + vpHeight);
 
   return (
-    <Box
+    <box
       flexDirection="column"
       width={width}
       height={height}
-      borderStyle="round"
+      border={true}
+      borderStyle="rounded"
       borderColor={borderColor}
     >
-      <Text bold color={theme.primary}>
+      <text attributes={TextAttributes.BOLD} fg={theme.primary}>
         {" "}
         {titleText}
-      </Text>
-      <Box flexDirection="column" height={vpHeight}>
+      </text>
+      <box flexDirection="column" height={vpHeight}>
         {visibleLines.length === 0 && (
-          <Text color={theme.textMuted}>{"  No messages. Select a chat to view messages."}</Text>
+          <text fg={theme.textMuted}>{"  No messages. Select a chat to view messages."}</text>
         )}
         {visibleLines.map((line, idx) => (
-          <Text key={`${clampedOffset + idx}`}>{line}</Text>
+          <text key={`${clampedOffset + idx}`}>{line}</text>
         ))}
-      </Box>
-    </Box>
+      </box>
+    </box>
   );
 });
 

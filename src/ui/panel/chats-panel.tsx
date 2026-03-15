@@ -1,7 +1,7 @@
 // Copyright (c) 2026 lazybeeper by Ronen Druker.
 
-import React, { useState, useEffect, useRef } from "react";
-import { Box, Text } from "ink";
+import React, { useState, useEffect, useRef, useMemo } from "react";
+import { TextAttributes } from "@opentui/core";
 import type { Chat } from "../../domain/types.js";
 import { useTheme } from "../theme/context.js";
 import { truncate, relativeTime, chatAvatar } from "../../domain/textutil.js";
@@ -47,7 +47,7 @@ export const ChatsPanel = React.memo(function ChatsPanel({
   height,
   cursor,
   top,
-}: ChatsPanelProps): React.ReactElement {
+}: ChatsPanelProps): React.ReactNode {
   const theme = useTheme();
   const [offset, setOffset] = useState(0);
 
@@ -68,20 +68,29 @@ export const ChatsPanel = React.memo(function ChatsPanel({
   }
 
   const end = Math.min(clampedOffset + slots, chats.length);
-  const visible = chats.slice(clampedOffset, end);
+  const visible = useMemo(() => chats.slice(clampedOffset, end), [chats, clampedOffset, end]);
+
   const borderColor = focused ? theme.borderActive : theme.border;
 
-  /** Tracks the previous image fingerprint to avoid unnecessary redraws. */
+  /** Tracks the previous image fingerprint to avoid redundant redraws. */
   const prevImageKeyRef = useRef("");
 
   /*
    * Write Kitty graphics images directly to stdout after each render,
-   * bypassing Ink's text pipeline which corrupts APC escape sequences.
-   * Uses a fingerprint to skip redundant delete+redraw cycles (e.g.,
-   * when only the cursor moved within the visible window).
+   * bypassing the text pipeline which corrupts APC escape sequences.
+   * Uses a fingerprint to skip redundant delete+redraw cycles when the
+   * visible chats and positions haven't changed (e.g. cursor-only moves
+   * within the same scroll window).
+   *
+   * Images are written synchronously in the effect callback, which fires
+   * after React commit and after OpenTUI's renderNative(), placing them
+   * between render frames. Using setTimeout here would be racy: React
+   * effect cleanup cancels pending timeouts when dependencies change
+   * (e.g. from chats_loaded or messages_loaded dispatches), and the
+   * fingerprint optimisation then prevents retrying.
    */
+  /* v8 ignore start -- Kitty image overlay requires real terminal, covered by writeImageOverlays tests */
   useEffect(() => {
-    /* v8 ignore start -- Kitty image overlay requires real terminal, covered by writeImageOverlays tests */
     if (!isKittySupported()) {
       return;
     }
@@ -116,15 +125,8 @@ export const ChatsPanel = React.memo(function ChatsPanel({
     }
     prevImageKeyRef.current = imageKey;
 
-    /* Defer drawing to ensure Ink's render cycle has completed. */
-    const timer = setTimeout(() => {
-      deleteAllImages();
-      writeImageOverlays(images);
-    }, 0);
-
-    return (): void => {
-      clearTimeout(timer);
-    };
+    deleteAllImages();
+    writeImageOverlays(images);
     /* v8 ignore stop */
   }, [visible, top, clampedOffset]);
 
@@ -140,17 +142,18 @@ export const ChatsPanel = React.memo(function ChatsPanel({
   /* v8 ignore stop */
 
   return (
-    <Box
+    <box
       flexDirection="column"
       width={width}
       height={height}
-      borderStyle="round"
+      border={true}
+      borderStyle="rounded"
       borderColor={borderColor}
     >
-      <Text bold color={theme.primary}>
+      <text attributes={TextAttributes.BOLD} fg={theme.primary}>
         {" Chats [2]"}
-      </Text>
-      {visible.length === 0 && <Text color={theme.textMuted}>{"   No chats"}</Text>}
+      </text>
+      {visible.length === 0 && <text fg={theme.textMuted}>{"   No chats"}</text>}
       {visible.map((chat, visIdx) => {
         const idx = clampedOffset + visIdx;
         return (
@@ -165,11 +168,11 @@ export const ChatsPanel = React.memo(function ChatsPanel({
         );
       })}
       {chats.length > slots && (
-        <Text color={theme.textMuted}>
+        <text fg={theme.textMuted}>
           {"   "}[{clampedOffset + 1}-{end} of {chats.length}]
-        </Text>
+        </text>
       )}
-    </Box>
+    </box>
   );
 });
 
@@ -197,13 +200,7 @@ interface ChatEntryProps {
  * @param root0.innerWidth - Available inner width for rendering.
  * @returns The rendered chat entry element.
  */
-function ChatEntry({
-  chat,
-  index,
-  cursor,
-  focused,
-  innerWidth,
-}: ChatEntryProps): React.ReactElement {
+function ChatEntry({ chat, index, cursor, focused, innerWidth }: ChatEntryProps): React.ReactNode {
   const theme = useTheme();
   const isSelected = index === cursor;
   const prefix = isSelected && focused ? " \u25b8 " : "   ";
@@ -224,30 +221,30 @@ function ChatEntry({
   }
 
   return (
-    <Box flexDirection="column">
-      <Text>
-        <Text color={isSelected && focused ? theme.primary : theme.textMuted}>{prefix}</Text>
-        <Text backgroundColor={avatar.color} color="#1e1e2e" bold>
+    <box flexDirection="column">
+      <text>
+        <span fg={isSelected && focused ? theme.primary : theme.textMuted}>{prefix}</span>
+        <span bg={avatar.color} fg="#1e1e2e" attributes={TextAttributes.BOLD}>
           {avatar.initials}
-        </Text>
-        <Text> </Text>
-        <Text color={nameColor} bold={nameBold}>
+        </span>
+        <span> </span>
+        <span fg={nameColor} attributes={nameBold ? TextAttributes.BOLD : undefined}>
           {chat.name}
-        </Text>
-        {chat.pinned && <Text color={theme.pinnedIndicator}>{" \u2605"}</Text>}
-        {chat.muted && <Text color={theme.mutedIndicator}>{" \u223c"}</Text>}
+        </span>
+        {chat.pinned && <span fg={theme.pinnedIndicator}>{" \u2605"}</span>}
+        {chat.muted && <span fg={theme.mutedIndicator}>{" \u223c"}</span>}
         {chat.unreadCount > 0 && (
-          <Text bold color={theme.unreadBadge}>
+          <span attributes={TextAttributes.BOLD} fg={theme.unreadBadge}>
             {" "}
             ({chat.unreadCount})
-          </Text>
+          </span>
         )}
-      </Text>
-      <Text color={theme.textMuted}>
+      </text>
+      <text fg={theme.textMuted}>
         {"   "}
-        {preview} {"\u00b7"} <Text color={theme.timestamp}>{timeStr}</Text>
-      </Text>
-    </Box>
+        {preview} {"\u00b7"} <span fg={theme.timestamp}>{timeStr}</span>
+      </text>
+    </box>
   );
 }
 

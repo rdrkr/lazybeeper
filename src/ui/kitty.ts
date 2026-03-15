@@ -1,6 +1,6 @@
 // Copyright (c) 2026 lazybeeper by Ronen Druker.
 
-import { readFileSync, existsSync } from "node:fs";
+import { readFileSync, existsSync, writeSync } from "node:fs";
 
 /**
  * Maximum size of a single base64 chunk in a Kitty graphics payload.
@@ -98,7 +98,7 @@ export function tmuxWrap(sequence: string): string {
  * When running inside tmux, the query is wrapped in DCS passthrough
  * so it reaches the underlying terminal emulator.
  *
- * Must be called before Ink takes over the terminal.
+ * Must be called before the renderer takes over the terminal.
  * @returns A promise that resolves to true if Kitty graphics are supported.
  */
 export async function detectKittyGraphics(): Promise<boolean> {
@@ -253,19 +253,27 @@ export function loadKittyImage(filePath: string, cols: number, rows: number): st
  *
  * When running inside tmux, the command is wrapped in DCS passthrough
  * so it reaches the underlying terminal emulator.
+ *
+ * Uses {@link writeSync} to write directly to fd 1, bypassing Bun's
+ * stdout buffering which can interleave with the Zig renderer's
+ * direct fd writes and corrupt escape sequences.
  */
 export function deleteAllImages(): void {
   const deleteCmd = "\x1b_Ga=d,d=a,q=2\x1b\\";
   /* v8 ignore next -- tmux branch only reachable when TMUX env var is set */
   const output = inTmux ? tmuxWrap(deleteCmd) : deleteCmd;
-  process.stdout.write(output);
+  writeSync(1, output);
 }
 
 /**
- * Writes Kitty graphics image overlays directly to stdout, bypassing
- * Ink's text pipeline which corrupts APC escape sequences. Uses ANSI
+ * Writes Kitty graphics image overlays to the terminal, bypassing the
+ * text rendering pipeline which corrupts APC escape sequences. Uses ANSI
  * cursor save/restore and absolute positioning to place images at the
  * correct terminal coordinates.
+ *
+ * Uses {@link writeSync} to write directly to fd 1, bypassing Bun's
+ * stdout buffering which can interleave with the Zig renderer's
+ * direct fd writes and corrupt escape sequences.
  *
  * When running inside tmux, each image sequence is wrapped in DCS
  * passthrough so it reaches the underlying terminal emulator.
@@ -285,7 +293,7 @@ export function writeImageOverlays(
     output += inTmux ? tmuxWrap(positionAndDraw) : positionAndDraw;
   }
 
-  process.stdout.write(output);
+  writeSync(1, output);
 }
 
 /**

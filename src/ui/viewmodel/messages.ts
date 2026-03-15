@@ -41,7 +41,7 @@ export type AppAction =
   | { readonly type: "focus_input" }
   | { readonly type: "set_focus"; readonly focus: import("./context.js").PanelFocus }
   | { readonly type: "resize"; readonly width: number; readonly height: number }
-  | { readonly type: "error"; readonly error: string }
+  | { readonly type: "error"; readonly error: string; readonly duration?: number }
   | { readonly type: "show_search" }
   | { readonly type: "show_help" }
   | { readonly type: "show_config" }

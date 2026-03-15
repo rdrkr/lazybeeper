@@ -1,14 +1,13 @@
 // Copyright (c) 2026 lazybeeper by Ronen Druker.
 
-import React from "react";
 import { describe, it, expect } from "vitest";
-import { render } from "ink-testing-library";
+import { render } from "../../helpers/render.js";
 import { ConfigPopup, CONFIG_ENTRY_COUNT } from "../../../src/ui/popup/config-popup.js";
 import { SelectionMode } from "../../../src/domain/config-file.js";
 
 describe("ConfigPopup", () => {
-  it("renders configuration title", () => {
-    const { lastFrame } = render(
+  it("renders configuration title", async () => {
+    const rendered = await render(
       <ConfigPopup
         cursor={0}
         currentTheme="Catppuccin Mocha"
@@ -17,11 +16,11 @@ describe("ConfigPopup", () => {
         height={40}
       />,
     );
-    expect(lastFrame()).toContain("Configuration");
+    expect(rendered.lastFrame()).toContain("Configuration");
   });
 
-  it("renders theme entry with current value", () => {
-    const { lastFrame } = render(
+  it("renders theme entry with current value", async () => {
+    const rendered = await render(
       <ConfigPopup
         cursor={0}
         currentTheme="Dracula"
@@ -30,13 +29,13 @@ describe("ConfigPopup", () => {
         height={40}
       />,
     );
-    const frame = lastFrame() ?? "";
+    const frame = rendered.lastFrame();
     expect(frame).toContain("Theme");
     expect(frame).toContain("Dracula");
   });
 
-  it("renders selection mode entry with current value", () => {
-    const { lastFrame } = render(
+  it("renders selection mode entry with current value", async () => {
+    const rendered = await render(
       <ConfigPopup
         cursor={1}
         currentTheme="Catppuccin Mocha"
@@ -45,13 +44,13 @@ describe("ConfigPopup", () => {
         height={40}
       />,
     );
-    const frame = lastFrame() ?? "";
+    const frame = rendered.lastFrame();
     expect(frame).toContain("Selection Mode");
     expect(frame).toContain("navigate");
   });
 
-  it("shows cursor indicator on selected item", () => {
-    const { lastFrame } = render(
+  it("shows cursor indicator on selected item", async () => {
+    const rendered = await render(
       <ConfigPopup
         cursor={0}
         currentTheme="Catppuccin Mocha"
@@ -60,11 +59,11 @@ describe("ConfigPopup", () => {
         height={40}
       />,
     );
-    expect(lastFrame()).toContain("\u25b8");
+    expect(rendered.lastFrame()).toContain("\u25b8");
   });
 
-  it("renders hint text", () => {
-    const { lastFrame } = render(
+  it("renders hint text", async () => {
+    const rendered = await render(
       <ConfigPopup
         cursor={0}
         currentTheme="Catppuccin Mocha"
@@ -73,12 +72,12 @@ describe("ConfigPopup", () => {
         height={40}
       />,
     );
-    expect(lastFrame()).toContain("Enter: edit");
-    expect(lastFrame()).toContain("Esc: close");
+    expect(rendered.lastFrame()).toContain("Enter: edit");
+    expect(rendered.lastFrame()).toContain("Esc: close");
   });
 
-  it("handles small terminal sizes without crashing", () => {
-    const { lastFrame } = render(
+  it("handles small terminal sizes without crashing", async () => {
+    const rendered = await render(
       <ConfigPopup
         cursor={0}
         currentTheme="Catppuccin Mocha"
@@ -87,7 +86,7 @@ describe("ConfigPopup", () => {
         height={10}
       />,
     );
-    expect(lastFrame()).toBeDefined();
+    expect(rendered.lastFrame()).toBeDefined();
   });
 
   it("exports CONFIG_ENTRY_COUNT as 2", () => {

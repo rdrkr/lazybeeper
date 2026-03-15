@@ -37,18 +37,18 @@ vi.mock("../../../src/ui/theme/themes.js", async () => {
 
 /* Dynamic import after mock is set up. */
 let ThemePopup: typeof import("../../../src/ui/popup/theme-popup.js").ThemePopup;
-let render: typeof import("ink-testing-library").render;
+let render: typeof import("../../helpers/render.js").render;
 
 beforeEach(async () => {
   const mod = await import("../../../src/ui/popup/theme-popup.js");
   ThemePopup = mod.ThemePopup;
-  const inkTest = await import("ink-testing-library");
-  render = inkTest.render;
+  const helper = await import("../../helpers/render.js");
+  render = helper.render;
 });
 
 describe("ThemePopup scroll indicator", () => {
-  it("shows scroll position when themes exceed MAX_VISIBLE", () => {
-    const { lastFrame } = render(
+  it("shows scroll position when themes exceed MAX_VISIBLE", async () => {
+    const rendered = await render(
       <ThemePopup
         cursor={5}
         activeTheme={THEMES["catppuccin-mocha"].name}
@@ -56,13 +56,13 @@ describe("ThemePopup scroll indicator", () => {
         height={40}
       />,
     );
-    const frame = lastFrame() ?? "";
+    const frame = rendered.lastFrame();
     /* Scroll indicator format: "  cursor+1/total" → "  6/13" */
     expect(frame).toMatch(/6\/13/);
   });
 
-  it("shows correct scroll position at first item", () => {
-    const { lastFrame } = render(
+  it("shows correct scroll position at first item", async () => {
+    const rendered = await render(
       <ThemePopup
         cursor={0}
         activeTheme={THEMES["catppuccin-mocha"].name}
@@ -70,12 +70,12 @@ describe("ThemePopup scroll indicator", () => {
         height={40}
       />,
     );
-    const frame = lastFrame() ?? "";
+    const frame = rendered.lastFrame();
     expect(frame).toMatch(/1\/13/);
   });
 
-  it("shows correct scroll position at last item", () => {
-    const { lastFrame } = render(
+  it("shows correct scroll position at last item", async () => {
+    const rendered = await render(
       <ThemePopup
         cursor={12}
         activeTheme={THEMES["catppuccin-mocha"].name}
@@ -83,7 +83,7 @@ describe("ThemePopup scroll indicator", () => {
         height={40}
       />,
     );
-    const frame = lastFrame() ?? "";
+    const frame = rendered.lastFrame();
     expect(frame).toMatch(/13\/13/);
   });
 });

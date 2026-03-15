@@ -1,7 +1,7 @@
 // Copyright (c) 2026 lazybeeper by Ronen Druker.
 
 import React from "react";
-import { Box, Text } from "ink";
+import { TextAttributes } from "@opentui/core";
 import { useTheme } from "../theme/context.js";
 import type { ChatAction } from "../viewmodel/messages.js";
 
@@ -39,53 +39,62 @@ export function ConfirmPopup({
   selected,
   width,
   height,
-}: ConfirmPopupProps): React.ReactElement {
+}: ConfirmPopupProps): React.ReactNode {
   const theme = useTheme();
   const boxWidth = Math.min(45, width - 6);
 
   return (
-    <Box
+    <box
       flexDirection="column"
       alignItems="center"
       justifyContent="center"
       width={width}
       height={height}
     >
-      <Box
+      <box
         flexDirection="column"
-        borderStyle="round"
+        border={true}
+        borderStyle="rounded"
         borderColor={theme.borderActive}
         backgroundColor={theme.background}
         paddingX={2}
         paddingY={1}
         width={boxWidth}
       >
-        <Text bold color={theme.textWarning}>
+        <text attributes={TextAttributes.BOLD} fg={theme.textWarning}>
           Confirm
-        </Text>
-        <Text>{""}</Text>
-        <Text color={theme.text}>{message}</Text>
-        <Text>{""}</Text>
-        <Box gap={2}>
-          <Text>{"  "}</Text>
+        </text>
+        <text>{""}</text>
+        <text fg={theme.text}>{message}</text>
+        <text>{""}</text>
+        <box gap={2}>
+          <text>{"  "}</text>
           {selected === 0 ? (
-            <Text bold color={theme.selectedText} backgroundColor={theme.backgroundElement}>
+            <text
+              attributes={TextAttributes.BOLD}
+              fg={theme.selectedText}
+              bg={theme.backgroundElement}
+            >
               {"  Yes  "}
-            </Text>
+            </text>
           ) : (
-            <Text color={theme.textMuted}>{"  Yes  "}</Text>
+            <text fg={theme.textMuted}>{"  Yes  "}</text>
           )}
           {selected === 1 ? (
-            <Text bold color={theme.selectedText} backgroundColor={theme.backgroundElement}>
+            <text
+              attributes={TextAttributes.BOLD}
+              fg={theme.selectedText}
+              bg={theme.backgroundElement}
+            >
               {"  No  "}
-            </Text>
+            </text>
           ) : (
-            <Text color={theme.textMuted}>{"  No  "}</Text>
+            <text fg={theme.textMuted}>{"  No  "}</text>
           )}
-        </Box>
-        <Text>{""}</Text>
-        <Text color={theme.textMuted}>{"y/n or \u2190/\u2192 + Enter"}</Text>
-      </Box>
-    </Box>
+        </box>
+        <text>{""}</text>
+        <text fg={theme.textMuted}>{"y/n or \u2190/\u2192 + Enter"}</text>
+      </box>
+    </box>
   );
 }

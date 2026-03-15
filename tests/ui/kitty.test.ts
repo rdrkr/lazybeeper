@@ -3,7 +3,21 @@
 import * as path from "node:path";
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
-import { describe, it, expect, beforeEach } from "vitest";
+import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
+
+/**
+ * Mock `writeSync` from `node:fs` so we can verify Kitty graphics output
+ * without actually writing to fd 1. All other `node:fs` exports are preserved.
+ * Uses `vi.hoisted` because `vi.mock` is hoisted above normal declarations.
+ */
+const { mockWriteSync } = vi.hoisted(() => ({
+  mockWriteSync: vi.fn<(fd: number, data: string) => number>().mockReturnValue(0),
+}));
+
+vi.mock("node:fs", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("node:fs")>();
+  return { ...actual, writeSync: mockWriteSync };
+});
 import {
   isKittySupported,
   setKittySupported,
@@ -190,67 +204,44 @@ describe("getTmuxRowOffset", () => {
 });
 
 describe("deleteAllImages", () => {
-  it("writes Kitty delete-all command to stdout", () => {
-    const written: string[] = [];
-    const origWrite = process.stdout.write;
-    process.stdout.write = ((chunk: string): boolean => {
-      written.push(chunk);
-      return true;
-    }) as typeof process.stdout.write;
+  afterEach(() => {
+    mockWriteSync.mockClear();
+  });
 
-    try {
-      deleteAllImages();
-      expect(written.length).toBe(1);
-      /* Contains delete action with delete-all specifier. */
-      expect(written[0]).toContain("\x1b_G");
-      expect(written[0]).toContain("a=d");
-      expect(written[0]).toContain("d=a");
-      expect(written[0]).toContain("q=2");
-      expect(written[0]).toContain("\x1b\\");
-    } finally {
-      process.stdout.write = origWrite;
-    }
+  it("writes Kitty delete-all command to stdout", () => {
+    deleteAllImages();
+    expect(mockWriteSync).toHaveBeenCalledTimes(1);
+    const output = mockWriteSync.mock.calls[0][1] as string;
+    /* Contains delete action with delete-all specifier. */
+    expect(output).toContain("\x1b_G");
+    expect(output).toContain("a=d");
+    expect(output).toContain("d=a");
+    expect(output).toContain("q=2");
+    expect(output).toContain("\x1b\\");
   });
 });
 
 describe("writeImageOverlays", () => {
-  it("does nothing for empty array", () => {
-    const written: string[] = [];
-    const origWrite = process.stdout.write;
-    process.stdout.write = ((chunk: string): boolean => {
-      written.push(chunk);
-      return true;
-    }) as typeof process.stdout.write;
+  afterEach(() => {
+    mockWriteSync.mockClear();
+  });
 
-    try {
-      writeImageOverlays([]);
-      expect(written.length).toBe(0);
-    } finally {
-      process.stdout.write = origWrite;
-    }
+  it("does nothing for empty array", () => {
+    writeImageOverlays([]);
+    expect(mockWriteSync).not.toHaveBeenCalled();
   });
 
   it("writes cursor-positioned image sequences to stdout", () => {
-    const written: string[] = [];
-    const origWrite = process.stdout.write;
-    process.stdout.write = ((chunk: string): boolean => {
-      written.push(chunk);
-      return true;
-    }) as typeof process.stdout.write;
-
-    try {
-      writeImageOverlays([{ seq: "IMG_DATA", row: 5, col: 3 }]);
-      expect(written.length).toBe(1);
-      /* Contains cursor save (\x1b7), positioning, image data, cursor restore (\x1b8). */
-      expect(written[0]).toContain("\x1b7");
-      expect(written[0]).toContain("\x1b[5;3H");
-      expect(written[0]).toContain("IMG_DATA");
-      expect(written[0]).toContain("\x1b8");
-      /* Should not contain delete command. */
-      expect(written[0]).not.toContain("a=d");
-    } finally {
-      process.stdout.write = origWrite;
-    }
+    writeImageOverlays([{ seq: "IMG_DATA", row: 5, col: 3 }]);
+    expect(mockWriteSync).toHaveBeenCalledTimes(1);
+    const output = mockWriteSync.mock.calls[0][1] as string;
+    /* Contains cursor save (\x1b7), positioning, image data, cursor restore (\x1b8). */
+    expect(output).toContain("\x1b7");
+    expect(output).toContain("\x1b[5;3H");
+    expect(output).toContain("IMG_DATA");
+    expect(output).toContain("\x1b8");
+    /* Should not contain delete command. */
+    expect(output).not.toContain("a=d");
   });
 });
 

@@ -58,6 +58,8 @@ export interface AppState {
   readonly errorMessage: string;
   /** Timestamp when the error was set. */
   readonly errorTime: number;
+  /** Duration in ms after which the error auto-clears (0 = default 10s). */
+  readonly errorDuration: number;
 
   /** Currently active popup, or null. */
   readonly activePopup: PopupType | null;
@@ -90,6 +92,7 @@ export function createInitialState(isMock: boolean): AppState {
     isMock,
     errorMessage: isMock ? "No BEEPER_TOKEN \u2014 using mock data" : "",
     errorTime: isMock ? Date.now() : 0,
+    errorDuration: 0,
     activePopup: null,
     confirmMessage: "",
     confirmAction: ChatAction.Archive,
@@ -269,7 +272,12 @@ export function appReducer(state: AppState, action: AppAction): AppState {
       return { ...state, focus: action.focus, prevFocus: state.focus };
 
     case "error":
-      return { ...state, errorMessage: action.error, errorTime: Date.now() };
+      return {
+        ...state,
+        errorMessage: action.error,
+        errorTime: Date.now(),
+        errorDuration: action.duration ?? 0,
+      };
 
     case "archive_chat":
       return state;

@@ -1,12 +1,12 @@
 #!/usr/bin/env node
 // Copyright (c) 2026 lazybeeper by Ronen Druker.
 
-import { render } from "ink";
+import { createCliRenderer } from "@opentui/core";
+import { createRoot } from "@opentui/react";
 import { App } from "./ui/app.js";
 import { loadConfig } from "./domain/config.js";
 import { readConfigFile } from "./domain/config-file.js";
 import { ApiClient } from "./data/client.js";
-import { enableSynchronizedOutput } from "./ui/terminal.js";
 import { detectKittyGraphics, isKittySupported, deleteAllImages } from "./ui/kitty.js";
 import { resolveTheme } from "./ui/theme/index.js";
 
@@ -55,21 +55,36 @@ const config = loadConfig(args.token, args.url, effectiveThemeFlag);
 const client = new ApiClient(config);
 const theme = resolveTheme(config.theme);
 
-/* Detect Kitty graphics protocol support before Ink takes over stdin. */
+/* Detect Kitty graphics protocol support before the renderer takes over stdin. */
 await detectKittyGraphics();
 
-/* Wrap stdout in DEC 2026 synchronized output to prevent flickering in tmux. */
-enableSynchronizedOutput(process.stdout);
+/* Create OpenTUI renderer — it owns the alternate screen and Ctrl-C handling. */
+const renderer = await createCliRenderer({ exitOnCtrlC: false, useAlternateScreen: true });
+const root = createRoot(renderer);
 
-/* Enter alternate screen buffer so the app leaves no trace on exit. */
-process.stdout.write("\x1b[?1049h");
+/*
+ * Disable threaded I/O so that the Zig renderer writes synchronously on
+ * the main thread. Kitty graphics overlays are written directly to stdout
+ * via process.stdout.write(); with threading enabled (the default on macOS),
+ * the Zig I/O thread can interleave with these writes, corrupting the APC
+ * escape sequences that carry image data.
+ */
+renderer.useThread = false;
 
-/* Clean up on exit: delete Kitty images and leave alternate screen buffer. */
-process.on("exit", () => {
+/**
+ * Cleanly shuts down the application by unmounting the React tree,
+ * destroying the renderer (which restores terminal state: alternate screen,
+ * raw mode, kitty keyboard protocol, mouse mode), and exiting the process.
+ */
+function quit(): void {
   if (isKittySupported()) {
     deleteAllImages();
   }
-  process.stdout.write("\x1b[?1049l");
-});
+  root.unmount();
+  renderer.destroy();
+  process.exit(0);
+}
 
-render(<App repo={client} theme={theme} selectionMode={configFile.selectionMode} />);
+root.render(
+  <App repo={client} theme={theme} selectionMode={configFile.selectionMode} onQuit={quit} />,
+);

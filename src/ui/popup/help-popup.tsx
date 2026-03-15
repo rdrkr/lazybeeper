@@ -1,7 +1,7 @@
 // Copyright (c) 2026 lazybeeper by Ronen Druker.
 
 import React from "react";
-import { Box, Text } from "ink";
+import { TextAttributes } from "@opentui/core";
 import { useTheme } from "../theme/context.js";
 
 /** Props for the HelpPopup component. */
@@ -89,22 +89,23 @@ const MAX_KEY_WIDTH = HELP_SECTIONS.reduce(
  * @param root0.height - Total terminal height.
  * @returns The rendered help popup element.
  */
-export function HelpPopup({ width, height }: HelpPopupProps): React.ReactElement {
+export function HelpPopup({ width, height }: HelpPopupProps): React.ReactNode {
   const theme = useTheme();
   const boxWidth = Math.min(50, width - 6);
   const boxHeight = Math.min(34, height - 4);
 
   return (
-    <Box
+    <box
       flexDirection="column"
       alignItems="center"
       justifyContent="center"
       width={width}
       height={height}
     >
-      <Box
+      <box
         flexDirection="column"
-        borderStyle="round"
+        border={true}
+        borderStyle="rounded"
         borderColor={theme.borderActive}
         backgroundColor={theme.background}
         paddingX={2}
@@ -113,29 +114,30 @@ export function HelpPopup({ width, height }: HelpPopupProps): React.ReactElement
         height={boxHeight}
         overflow="hidden"
       >
-        <Text bold color={theme.primary}>
+        <text attributes={TextAttributes.BOLD} fg={theme.primary}>
           Keybinding Reference
-        </Text>
-        <Text>{""}</Text>
-        {HELP_SECTIONS.map((section) => (
-          <Box key={section.title} flexDirection="column" marginBottom={1}>
-            <Text bold color={theme.secondary}>
+        </text>
+        <text>{""}</text>
+        {HELP_SECTIONS.map((section, sectionIdx) => (
+          <React.Fragment key={section.title}>
+            {sectionIdx > 0 && <text>{""}</text>}
+            <text attributes={TextAttributes.BOLD} fg={theme.secondary}>
               {section.title}
-            </Text>
+            </text>
             {section.bindings.map((bind) => (
-              <Text key={bind.key}>
+              <text key={bind.key}>
                 {"  "}
-                <Text bold color={theme.accent}>
+                <span attributes={TextAttributes.BOLD} fg={theme.accent}>
                   {bind.key.padEnd(MAX_KEY_WIDTH)}
-                </Text>
+                </span>
                 {"  "}
-                <Text color={theme.textMuted}>{bind.desc}</Text>
-              </Text>
+                <span fg={theme.textMuted}>{bind.desc}</span>
+              </text>
             ))}
-          </Box>
+          </React.Fragment>
         ))}
-        <Text color={theme.textMuted}>{"Press Esc or ? to close"}</Text>
-      </Box>
-    </Box>
+        <text fg={theme.textMuted}>{"Press Esc or ? to close"}</text>
+      </box>
+    </box>
   );
 }

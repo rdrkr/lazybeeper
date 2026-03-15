@@ -1,14 +1,13 @@
 // Copyright (c) 2026 lazybeeper by Ronen Druker.
 
-import React from "react";
 import { describe, it, expect } from "vitest";
-import { render } from "ink-testing-library";
+import { render } from "../../helpers/render.js";
 import { ConfirmPopup } from "../../../src/ui/popup/confirm-popup.js";
 import { ChatAction } from "../../../src/ui/viewmodel/messages.js";
 
 describe("ConfirmPopup", () => {
-  it("renders confirm title", () => {
-    const { lastFrame } = render(
+  it("renders confirm title", async () => {
+    const rendered = await render(
       <ConfirmPopup
         message='Archive chat "Alice"?'
         action={ChatAction.Archive}
@@ -20,11 +19,11 @@ describe("ConfirmPopup", () => {
         height={24}
       />,
     );
-    expect(lastFrame()).toContain("Confirm");
+    expect(rendered.lastFrame()).toContain("Confirm");
   });
 
-  it("renders the message", () => {
-    const { lastFrame } = render(
+  it("renders the message", async () => {
+    const rendered = await render(
       <ConfirmPopup
         message='Archive chat "Alice"?'
         action={ChatAction.Archive}
@@ -36,11 +35,11 @@ describe("ConfirmPopup", () => {
         height={24}
       />,
     );
-    expect(lastFrame()).toContain("Archive chat");
+    expect(rendered.lastFrame()).toContain("Archive chat");
   });
 
-  it("renders yes and no buttons", () => {
-    const { lastFrame } = render(
+  it("renders yes and no buttons", async () => {
+    const rendered = await render(
       <ConfirmPopup
         message="Test?"
         action={ChatAction.Archive}
@@ -52,12 +51,12 @@ describe("ConfirmPopup", () => {
         height={24}
       />,
     );
-    expect(lastFrame()).toContain("Yes");
-    expect(lastFrame()).toContain("No");
+    expect(rendered.lastFrame()).toContain("Yes");
+    expect(rendered.lastFrame()).toContain("No");
   });
 
-  it("renders hints text", () => {
-    const { lastFrame } = render(
+  it("renders hints text", async () => {
+    const rendered = await render(
       <ConfirmPopup
         message="Test?"
         action={ChatAction.Archive}
@@ -69,6 +68,6 @@ describe("ConfirmPopup", () => {
         height={24}
       />,
     );
-    expect(lastFrame()).toContain("y/n");
+    expect(rendered.lastFrame()).toContain("y/n");
   });
 });

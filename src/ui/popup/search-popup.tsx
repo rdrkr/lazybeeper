@@ -1,8 +1,7 @@
 // Copyright (c) 2026 lazybeeper by Ronen Druker.
 
 import React from "react";
-import { Box, Text } from "ink";
-import TextInput from "ink-text-input";
+import { TextAttributes } from "@opentui/core";
 import type { Chat } from "../../domain/types.js";
 import { useTheme } from "../theme/context.js";
 
@@ -49,22 +48,23 @@ export function SearchPopup({
   cursor,
   width,
   height,
-}: SearchPopupProps): React.ReactElement {
+}: SearchPopupProps): React.ReactNode {
   const theme = useTheme();
   const boxWidth = Math.min(50, width - 6);
   const boxHeight = Math.min(18, height - 4);
 
   return (
-    <Box
+    <box
       flexDirection="column"
       alignItems="center"
       justifyContent="center"
       width={width}
       height={height}
     >
-      <Box
+      <box
         flexDirection="column"
-        borderStyle="round"
+        border={true}
+        borderStyle="rounded"
         borderColor={theme.borderActive}
         backgroundColor={theme.background}
         paddingX={2}
@@ -72,41 +72,44 @@ export function SearchPopup({
         width={boxWidth}
         height={boxHeight}
       >
-        <Text bold color={theme.primary}>
+        <text attributes={TextAttributes.BOLD} fg={theme.primary}>
           Search Chats
-        </Text>
-        <Text>{""}</Text>
-        <TextInput value={query} onChange={onQueryChange} placeholder="Search chats..." />
-        <Text>{""}</Text>
+        </text>
+        <text>{""}</text>
+        <input value={query} onChange={onQueryChange} placeholder="Search chats..." />
+        <text>{""}</text>
         {filtered.length === 0 ? (
-          <Text color={theme.textMuted}>{"  No results"}</Text>
+          <text fg={theme.textMuted}>{"  No results"}</text>
         ) : (
           filtered.slice(0, MAX_RESULTS).map((chat, idx) => {
             const isSelected = idx === cursor;
             const indicator = isSelected ? "\u25b8 " : "  ";
             const color = isSelected ? theme.selectedText : theme.textMuted;
-            const bold = isSelected;
 
             return (
-              <Text key={chat.id} color={color} bold={bold}>
+              <text
+                key={chat.id}
+                fg={color}
+                attributes={isSelected ? TextAttributes.BOLD : undefined}
+              >
                 {indicator}
                 {chat.name}
                 {chat.unreadCount > 0 ? ` (${chat.unreadCount})` : ""}
-              </Text>
+              </text>
             );
           })
         )}
         {filtered.length > MAX_RESULTS && (
-          <Text color={theme.textMuted}>
+          <text fg={theme.textMuted}>
             {"  ... and "}
             {filtered.length - MAX_RESULTS}
             {" more"}
-          </Text>
+          </text>
         )}
-        <Text>{""}</Text>
-        <Text color={theme.textMuted}>{"Enter: select  Esc: close  \u2191/\u2193: navigate"}</Text>
-      </Box>
-    </Box>
+        <text>{""}</text>
+        <text fg={theme.textMuted}>{"Enter: select  Esc: close  \u2191/\u2193: navigate"}</text>
+      </box>
+    </box>
   );
 }
 

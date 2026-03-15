@@ -49,6 +49,7 @@ export default tseslint.config(
       ...react.configs.recommended.rules,
       ...reactHooks.configs.recommended.rules,
       "react/react-in-jsx-scope": "off",
+      "react/no-unknown-property": "off",
 
       // TypeScript overrides
       "@typescript-eslint/explicit-function-return-type": "error",

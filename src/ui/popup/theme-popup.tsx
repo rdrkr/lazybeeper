@@ -1,7 +1,7 @@
 // Copyright (c) 2026 lazybeeper by Ronen Druker.
 
 import React from "react";
-import { Box, Text } from "ink";
+import { TextAttributes } from "@opentui/core";
 import { useTheme } from "../theme/context.js";
 import type { ThemeName } from "../theme/types.js";
 import { getThemeNames, THEMES } from "../theme/themes.js";
@@ -35,7 +35,7 @@ export function ThemePopup({
   activeTheme,
   width,
   height,
-}: ThemePopupProps): React.ReactElement {
+}: ThemePopupProps): React.ReactNode {
   const theme = useTheme();
   const names = getThemeNames();
   const boxWidth = Math.min(40, width - 6);
@@ -52,16 +52,17 @@ export function ThemePopup({
   const visible = names.slice(start, end);
 
   return (
-    <Box
+    <box
       flexDirection="column"
       alignItems="center"
       justifyContent="center"
       width={width}
       height={height}
     >
-      <Box
+      <box
         flexDirection="column"
-        borderStyle="round"
+        border={true}
+        borderStyle="rounded"
         borderColor={theme.borderActive}
         backgroundColor={theme.background}
         paddingX={2}
@@ -69,10 +70,10 @@ export function ThemePopup({
         width={boxWidth}
         height={boxHeight}
       >
-        <Text bold color={theme.primary}>
+        <text attributes={TextAttributes.BOLD} fg={theme.primary}>
           Select Theme
-        </Text>
-        <Text>{""}</Text>
+        </text>
+        <text>{""}</text>
         {visible.map((name, idx) => {
           const realIdx = start + idx;
           const isSelected = realIdx === cursor;
@@ -81,20 +82,24 @@ export function ThemePopup({
           const color = isSelected ? theme.selectedText : theme.text;
 
           return (
-            <Text key={`${name}-${realIdx}`} color={color} bold={isSelected}>
+            <text
+              key={`${name}-${realIdx}`}
+              fg={color}
+              attributes={isSelected ? TextAttributes.BOLD : undefined}
+            >
               {indicator}
               {THEMES[name].name}
-              {isActive ? <Text color={theme.textSuccess}>{" \u2713"}</Text> : ""}
-            </Text>
+              {isActive ? <span fg={theme.textSuccess}>{" \u2713"}</span> : ""}
+            </text>
           );
         })}
         {names.length > visibleCount && (
-          <Text color={theme.textMuted}>{`  ${cursor + 1}/${names.length}`}</Text>
+          <text fg={theme.textMuted}>{`  ${cursor + 1}/${names.length}`}</text>
         )}
-        <Text>{""}</Text>
-        <Text color={theme.textMuted}>{"Enter: apply  Esc: close  \u2191/\u2193: navigate"}</Text>
-      </Box>
-    </Box>
+        <text>{""}</text>
+        <text fg={theme.textMuted}>{"Enter: apply  Esc: close  \u2191/\u2193: navigate"}</text>
+      </box>
+    </box>
   );
 }
 

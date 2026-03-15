@@ -1,8 +1,7 @@
 // Copyright (c) 2026 lazybeeper by Ronen Druker.
 
-import React from "react";
 import { describe, it, expect } from "vitest";
-import { render } from "ink-testing-library";
+import { render } from "../../helpers/render.js";
 import { SearchPopup } from "../../../src/ui/popup/search-popup.js";
 import type { Chat } from "../../../src/domain/types.js";
 
@@ -30,8 +29,8 @@ const mockChats: Chat[] = [
 ];
 
 describe("SearchPopup", () => {
-  it("renders search title", () => {
-    const { lastFrame } = render(
+  it("renders search title", async () => {
+    const rendered = await render(
       <SearchPopup
         chats={mockChats}
         query=""
@@ -44,11 +43,11 @@ describe("SearchPopup", () => {
         height={24}
       />,
     );
-    expect(lastFrame()).toContain("Search Chats");
+    expect(rendered.lastFrame()).toContain("Search Chats");
   });
 
-  it("renders filtered results", () => {
-    const { lastFrame } = render(
+  it("renders filtered results", async () => {
+    const rendered = await render(
       <SearchPopup
         chats={mockChats}
         query=""
@@ -61,12 +60,12 @@ describe("SearchPopup", () => {
         height={24}
       />,
     );
-    expect(lastFrame()).toContain("Alice");
-    expect(lastFrame()).toContain("Bob");
+    expect(rendered.lastFrame()).toContain("Alice");
+    expect(rendered.lastFrame()).toContain("Bob");
   });
 
-  it("renders unread count for matching chats", () => {
-    const { lastFrame } = render(
+  it("renders unread count for matching chats", async () => {
+    const rendered = await render(
       <SearchPopup
         chats={mockChats}
         query=""
@@ -79,11 +78,11 @@ describe("SearchPopup", () => {
         height={24}
       />,
     );
-    expect(lastFrame()).toContain("(2)");
+    expect(rendered.lastFrame()).toContain("(2)");
   });
 
-  it("renders no results message", () => {
-    const { lastFrame } = render(
+  it("renders no results message", async () => {
+    const rendered = await render(
       <SearchPopup
         chats={mockChats}
         query="xyz"
@@ -96,11 +95,11 @@ describe("SearchPopup", () => {
         height={24}
       />,
     );
-    expect(lastFrame()).toContain("No results");
+    expect(rendered.lastFrame()).toContain("No results");
   });
 
-  it("renders cursor indicator", () => {
-    const { lastFrame } = render(
+  it("renders cursor indicator", async () => {
+    const rendered = await render(
       <SearchPopup
         chats={mockChats}
         query=""
@@ -113,11 +112,11 @@ describe("SearchPopup", () => {
         height={24}
       />,
     );
-    expect(lastFrame()).toContain("\u25b8");
+    expect(rendered.lastFrame()).toContain("\u25b8");
   });
 
-  it("renders hints text", () => {
-    const { lastFrame } = render(
+  it("renders hints text", async () => {
+    const rendered = await render(
       <SearchPopup
         chats={mockChats}
         query=""
@@ -130,11 +129,11 @@ describe("SearchPopup", () => {
         height={24}
       />,
     );
-    expect(lastFrame()).toContain("Enter: select");
-    expect(lastFrame()).toContain("Esc: close");
+    expect(rendered.lastFrame()).toContain("Enter: select");
+    expect(rendered.lastFrame()).toContain("Esc: close");
   });
 
-  it("shows overflow count for many results", () => {
+  it("shows overflow count for many results", async () => {
     const manyChats: Chat[] = Array.from({ length: 15 }, (_, idx) => ({
       id: `chat${idx}`,
       accountId: "test",
@@ -146,7 +145,7 @@ describe("SearchPopup", () => {
       muted: false,
     }));
 
-    const { lastFrame } = render(
+    const rendered = await render(
       <SearchPopup
         chats={manyChats}
         query=""
@@ -159,6 +158,6 @@ describe("SearchPopup", () => {
         height={30}
       />,
     );
-    expect(lastFrame()).toContain("5 more");
+    expect(rendered.lastFrame()).toContain("5 more");
   });
 });

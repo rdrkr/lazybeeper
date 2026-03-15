@@ -1,64 +1,63 @@
 // Copyright (c) 2026 lazybeeper by Ronen Druker.
 
-import React from "react";
 import { describe, it, expect } from "vitest";
-import { render } from "ink-testing-library";
+import { render } from "../../helpers/render.js";
 import { InputPanel } from "../../../src/ui/panel/input-panel.js";
 
 describe("InputPanel", () => {
-  it("renders the title", () => {
-    const { lastFrame } = render(
+  it("renders the title", async () => {
+    const rendered = await render(
       <InputPanel
         focused={false}
         width={40}
         height={5}
         value=""
-        onChange={() => {}}
+        onInput={() => {}}
         onSubmit={() => {}}
       />,
     );
-    expect(lastFrame()).toContain("Input [4]");
+    expect(rendered.lastFrame()).toContain("Input [4]");
   });
 
-  it("renders placeholder when unfocused and empty", () => {
-    const { lastFrame } = render(
+  it("renders placeholder when unfocused and empty", async () => {
+    const rendered = await render(
       <InputPanel
         focused={false}
         width={40}
         height={5}
         value=""
-        onChange={() => {}}
+        onInput={() => {}}
         onSubmit={() => {}}
       />,
     );
-    expect(lastFrame()).toContain("Type a message...");
+    expect(rendered.lastFrame()).toContain("Type a message...");
   });
 
-  it("renders input value when unfocused", () => {
-    const { lastFrame } = render(
+  it("renders input value when unfocused", async () => {
+    const rendered = await render(
       <InputPanel
         focused={false}
         width={40}
         height={5}
         value="Hello world"
-        onChange={() => {}}
+        onInput={() => {}}
         onSubmit={() => {}}
       />,
     );
-    expect(lastFrame()).toContain("Hello world");
+    expect(rendered.lastFrame()).toContain("Hello world");
   });
 
-  it("renders with focus", () => {
-    const { lastFrame } = render(
+  it("renders with focus", async () => {
+    const rendered = await render(
       <InputPanel
         focused={true}
         width={40}
         height={5}
         value=""
-        onChange={() => {}}
+        onInput={() => {}}
         onSubmit={() => {}}
       />,
     );
-    expect(lastFrame()).toContain("Input [4]");
+    expect(rendered.lastFrame()).toContain("Input [4]");
   });
 });
