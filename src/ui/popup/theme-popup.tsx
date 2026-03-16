@@ -62,7 +62,7 @@ export function ThemePopup({
       <box
         flexDirection="column"
         border={true}
-        borderStyle="rounded"
+        borderStyle="single"
         borderColor={theme.borderActive}
         backgroundColor={theme.background}
         paddingX={2}

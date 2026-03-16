@@ -7,7 +7,7 @@ import type { Theme } from "../theme/types.js";
 import { useTheme } from "../theme/context.js";
 import { useStyle } from "../style/context.js";
 import { Style } from "../../domain/config-file.js";
-import { formatTime, dateLabel, sameDay, wrapText } from "../../domain/textutil.js";
+import { formatTime, dateLabel, sameDay, wrapText, buildScrollbar } from "../../domain/textutil.js";
 
 /**
  * A rendered message line with optional styling metadata.
@@ -60,49 +60,72 @@ export const MessagesPanel = React.memo(function MessagesPanel({
   const theme = useTheme();
   const style = useStyle();
   const isModern = style === Style.Modern;
-  const innerWidth = Math.max(width - (isModern ? 0 : 2), 0);
-  const innerHeight = Math.max(height - (isModern ? 0 : 2), 0);
+  const innerWidth = Math.max(width - 2, 0);
+  const innerHeight = Math.max(height - 2, 0);
   const vpHeight = Math.max(innerHeight - 1, 1);
 
   const titleText = chatName ? ` ${chatName} [3]` : " Messages [3]";
   const borderColor = focused ? theme.borderActive : theme.border;
 
-  const renderedLines = renderMessageLines(messages, innerWidth, isModern, theme);
+  /** Scrollbar column width (1 when scrollbar visible, 0 otherwise). */
+  const scrollbarWidth = 1;
+
+  /** Content width: inner width minus scrollbar column. */
+  const contentWidth = Math.max(innerWidth - scrollbarWidth, 1);
+
+  const renderedLines = renderMessageLines(messages, contentWidth, isModern, theme);
   const totalLines = renderedLines.length;
   const maxOffset = Math.max(totalLines - vpHeight, 0);
   const clampedOffset = Math.min(Math.max(scrollOffset, 0), maxOffset);
 
   const visibleLines = renderedLines.slice(clampedOffset, clampedOffset + vpHeight);
 
+  /** Scrollbar characters (empty when content fits). */
+  const scrollbar = buildScrollbar(totalLines, vpHeight, clampedOffset);
+
   return (
     <box
       flexDirection="column"
       width={width}
       height={height}
-      border={!isModern}
-      borderStyle={isModern ? undefined : "rounded"}
-      borderColor={isModern ? undefined : borderColor}
+      border={true}
+      borderStyle="single"
+      borderColor={isModern ? (focused ? theme.borderActive : theme.backgroundPanel) : borderColor}
       backgroundColor={isModern ? theme.backgroundPanel : undefined}
     >
       <text attributes={TextAttributes.BOLD} fg={theme.primary}>
         {titleText}
       </text>
-      <box flexDirection="column" height={vpHeight}>
-        {visibleLines.length === 0 && (
-          <text fg={theme.textMuted}>{"  No messages. Select a chat to view messages."}</text>
-        )}
-        {visibleLines.map((line, idx) => (
-          <text key={`${clampedOffset + idx}`}>
-            {line.padLeft && line.padLeft > 0 && <span>{" ".repeat(line.padLeft)}</span>}
-            {line.accentBg && line.accentBar && !line.barRight && (
-              <span fg={line.accentBar}>{"\u2502"}</span>
-            )}
-            {line.accentBg ? <span bg={line.accentBg}>{line.text}</span> : <span>{line.text}</span>}
-            {line.accentBg && line.accentBar && line.barRight && (
-              <span fg={line.accentBar}>{"\u2502"}</span>
-            )}
-          </text>
-        ))}
+      <box flexDirection="row" height={vpHeight}>
+        <box flexDirection="column" width={contentWidth}>
+          {visibleLines.length === 0 && (
+            <text fg={theme.textMuted}>{"  No messages. Select a chat to view messages."}</text>
+          )}
+          {visibleLines.map((line, idx) => (
+            <text key={`${clampedOffset + idx}`}>
+              {line.padLeft && line.padLeft > 0 && <span>{" ".repeat(line.padLeft)}</span>}
+              {line.accentBg && line.accentBar && !line.barRight && (
+                <span fg={line.accentBar}>{"\u2502"}</span>
+              )}
+              {line.accentBg ? (
+                <span bg={line.accentBg}>{line.text}</span>
+              ) : (
+                <span>{line.text}</span>
+              )}
+              {line.accentBg && line.accentBar && line.barRight && (
+                <span fg={line.accentBar}>{"\u2502"}</span>
+              )}
+            </text>
+          ))}
+        </box>
+        <box flexDirection="column" width={scrollbarWidth}>
+          {scrollbar.length > 0 &&
+            scrollbar.map((ch, i) => (
+              <text key={`sb-${String(i)}`} fg={theme.textMuted}>
+                {ch}
+              </text>
+            ))}
+        </box>
       </box>
     </box>
   );
@@ -212,13 +235,15 @@ function renderOwnBubble(
   theme: Theme,
 ): MessageLine[] {
   const header = `You  ${timeStr}`;
-  const headerPad = Math.max(viewWidth - header.length, 0);
   const bodyLines = body.split("\n");
 
   /** Bar width consumed by the vertical accent bar in modern mode. */
   const barWidth = modern ? 1 : 0;
-  /** Bubble content width: each line is padded to maxBubbleWidth. */
-  const bubbleWidth = maxBubbleWidth;
+  /** Longest body line length, plus 2 for inner padding. */
+  const contentWidth = Math.max(...bodyLines.map((l) => l.length)) + 2;
+  /** Bubble width: fits the content but never exceeds the maximum. */
+  const bubbleWidth = Math.min(Math.max(contentWidth, 6), maxBubbleWidth);
+  const headerPad = Math.max(viewWidth - header.length, 0);
 
   const lines: MessageLine[] = [{ text: header, padLeft: headerPad }];
 
@@ -277,6 +302,11 @@ function renderOtherBubble(
   const header = `${sender}  ${timeStr}`;
   const bodyLines = body.split("\n");
 
+  /** Longest body line length, plus 2 for inner padding. */
+  const contentWidth = Math.max(...bodyLines.map((l) => l.length)) + 2;
+  /** Bubble width: fits the content but never exceeds the maximum. */
+  const bubbleWidth = Math.min(Math.max(contentWidth, 6), maxBubbleWidth);
+
   const lines: MessageLine[] = [{ text: header }];
 
   /**
@@ -285,7 +315,7 @@ function renderOtherBubble(
    * @returns A styled message line.
    */
   const makeBubbleLine = (content: string): MessageLine => {
-    const padded = content.padEnd(maxBubbleWidth);
+    const padded = content.padEnd(bubbleWidth);
     if (modern) {
       return {
         text: padded,

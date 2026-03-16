@@ -49,5 +49,6 @@ export type AppAction =
   | { readonly type: "show_config" }
   | { readonly type: "show_theme" }
   | { readonly type: "theme_selected"; readonly themeName: string }
+  | { readonly type: "close_theme" }
   | { readonly type: "reload_config" }
   | { readonly type: "set_input_value"; readonly value: string };

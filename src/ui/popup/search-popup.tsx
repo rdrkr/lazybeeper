@@ -64,7 +64,7 @@ export function SearchPopup({
       <box
         flexDirection="column"
         border={true}
-        borderStyle="rounded"
+        borderStyle="single"
         borderColor={theme.borderActive}
         backgroundColor={theme.background}
         paddingX={2}
@@ -79,7 +79,12 @@ export function SearchPopup({
           <text fg={theme.textMuted}>esc</text>
         </box>
         <text>{""}</text>
-        <input value={query} onChange={onQueryChange} placeholder="Search chats..." />
+        <input
+          focused={true}
+          value={query}
+          onChange={onQueryChange}
+          placeholder="Search chats..."
+        />
         <text>{""}</text>
         {filtered.length === 0 ? (
           <text fg={theme.textMuted}>{"  No results"}</text>

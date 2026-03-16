@@ -255,25 +255,69 @@ export function wrapText(text: string, maxWidth: number): string {
     return text;
   }
 
-  const words = text.split(/\s+/).filter((word) => word.length > 0);
-  if (words.length === 0) {
-    return "";
-  }
+  /* Split on explicit newlines first to preserve paragraph breaks. */
+  const paragraphs = text.split("\n");
+  const result: string[] = [];
 
-  const lines: string[] = [];
-  /* v8 ignore next -- words[0] is guaranteed defined by the length check above */
-  let current = words[0] ?? "";
-
-  for (const word of words.slice(1)) {
-    if (current.length + 1 + word.length <= maxWidth) {
-      current += " " + word;
-    } else {
-      lines.push(current);
-      current = word;
+  for (const para of paragraphs) {
+    const words = para.split(/[ \t]+/).filter((word) => word.length > 0);
+    if (words.length === 0) {
+      result.push("");
+      continue;
     }
+
+    /* v8 ignore next -- words[0] is guaranteed defined by the length check above */
+    let current = words[0] ?? "";
+
+    for (const word of words.slice(1)) {
+      if (current.length + 1 + word.length <= maxWidth) {
+        current += " " + word;
+      } else {
+        result.push(current);
+        current = word;
+      }
+    }
+
+    result.push(current);
   }
 
-  lines.push(current);
+  return result.join("\n");
+}
 
-  return lines.join("\n");
+/** Thin track character for the scrollbar. */
+const SCROLL_TRACK = "\u2502";
+
+/** Thick thumb character for the scrollbar. */
+const SCROLL_THUMB = "\u2588";
+
+/**
+ * Builds a vertical scrollbar as an array of single-character strings.
+ * Each element is either a track character or a thumb character.
+ * Returns an empty array when all content is visible (no scrollbar needed).
+ * @param totalLines - Total number of content lines.
+ * @param visibleLines - Number of lines visible in the viewport.
+ * @param offset - Current scroll offset (0-based).
+ * @returns An array of track/thumb characters, one per viewport row.
+ */
+export function buildScrollbar(totalLines: number, visibleLines: number, offset: number): string[] {
+  if (totalLines <= visibleLines || visibleLines <= 0) {
+    return [];
+  }
+
+  const maxOffset = totalLines - visibleLines;
+  const clampedOffset = Math.min(Math.max(offset, 0), maxOffset);
+
+  /** Thumb size: proportional to visible/total, minimum 1 row. */
+  const thumbSize = Math.max(Math.round((visibleLines / totalLines) * visibleLines), 1);
+
+  /** Thumb position: proportional to scroll offset within available track. */
+  const track = visibleLines - thumbSize;
+  const thumbStart = Math.round((clampedOffset / maxOffset) * track);
+
+  const bar: string[] = [];
+  for (let i = 0; i < visibleLines; i++) {
+    bar.push(i >= thumbStart && i < thumbStart + thumbSize ? SCROLL_THUMB : SCROLL_TRACK);
+  }
+
+  return bar;
 }

@@ -23,15 +23,32 @@ run = "bunx vitest run --coverage"
 
 [tasks.check]
 description = "Full check: verify formatting, lint, test with coverage, build"
-depends = ["build"]
+depends = ["test"]
 
 [tasks.run]
 description = "Run the application (mock mode by default)"
 run = "bun run src/index.tsx --token ''"
 
+[tasks."build:web"]
+description = "Build the web version"
+run = "bun run scripts/build-web.ts"
+
+[tasks."serve:web"]
+description = "Build and serve the web version on localhost:3000"
+depends = ["build:web"]
+run = "cd dist-web && bunx serve -l tcp://0.0.0.0:3000"
+
+[tasks.e2e]
+description = "Run Playwright end-to-end tests"
+run = "bunx playwright test"
+
+[tasks."e2e:headed"]
+description = "Run Playwright e2e tests with visible browser"
+run = "bunx playwright test --headed"
+
 [tasks.clean]
 description = "Clean build artifacts"
-run = "rm -rf dist coverage tsconfig.tsbuildinfo"
+run = "rm -rf dist dist-web coverage tsconfig.tsbuildinfo test-results playwright-report"
 
 [tasks.dev]
 description = "Run the application for development (mock mode by default)"

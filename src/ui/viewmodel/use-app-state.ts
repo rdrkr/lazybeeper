@@ -251,15 +251,22 @@ export function appReducer(state: AppState, action: AppAction): AppState {
       return {
         ...state,
         activePopup: PopupType.Theme,
-        prevFocus: state.focus,
+        /* Keep prevFocus from config popup so closing config restores the right panel. */
         focus: PanelFocus.Popup,
       };
 
     case "theme_selected":
       return {
         ...state,
-        activePopup: null,
-        focus: state.prevFocus,
+        activePopup: PopupType.Config,
+        focus: PanelFocus.Popup,
+      };
+
+    case "close_theme":
+      return {
+        ...state,
+        activePopup: PopupType.Config,
+        focus: PanelFocus.Popup,
       };
 
     case "reload_config":

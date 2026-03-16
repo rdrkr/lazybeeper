@@ -17,3 +17,6 @@ coverage/
 # Editor/IDE
 # .idea/
 # .vscode/
+/dist-web
+/test-results
+.DS_Store

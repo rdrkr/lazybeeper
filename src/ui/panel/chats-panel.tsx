@@ -23,11 +23,11 @@ const LINES_PER_CHAT_COMPACT = 2;
 /** Number of rendered lines each comfortable chat entry takes (3 content + 1 spacer). */
 const LINES_PER_CHAT_COMFORTABLE = 4;
 
-/** Avatar width in columns for compact mode (2 cols ≈ square on 1 row). */
+/** Avatar width in columns for compact mode (2 cols on 1 row). */
 const AVATAR_COLS_COMPACT = 2;
 
-/** Avatar width in columns for comfortable mode (6 cols ≈ square on 3 rows). */
-const AVATAR_COLS_COMFORTABLE = 6;
+/** Avatar width in columns for comfortable mode (5 cols ≈ square on 2 rows). */
+const AVATAR_COLS_COMFORTABLE = 7;
 
 /** Column offset where the avatar is rendered (border + prefix). */
 const AVATAR_COL = 5;
@@ -72,8 +72,8 @@ export const ChatsPanel = React.memo(function ChatsPanel({
   const isComfortable = chatListStyle === ChatListStyle.Comfortable;
   const linesPerChat = isComfortable ? LINES_PER_CHAT_COMFORTABLE : LINES_PER_CHAT_COMPACT;
 
-  const innerWidth = Math.max(width - (isModern ? 0 : 2), 0);
-  const innerHeight = Math.max(height - (isModern ? 0 : 2), 0);
+  const innerWidth = Math.max(width - 2, 0);
+  const innerHeight = Math.max(height - 2, 0);
   const titleLines = 1;
   let usable = innerHeight - titleLines;
 
@@ -146,22 +146,27 @@ export const ChatsPanel = React.memo(function ChatsPanel({
       }
 
       const imgCols = isComfortable ? AVATAR_COLS_COMFORTABLE : AVATAR_COLS_COMPACT;
-      /** Perfect square: rows = cols / 2 due to terminal 2:1 cell aspect ratio. */
-      const imgRows = imgCols / 2;
+      const imgRows = linesPerChat - 1;
       const seq = loadKittyImage(chat.avatarPath, imgCols, imgRows);
       if (!seq) {
         return;
       }
 
-      /* Row: top (panel Y offset) + 1 (border) + 1 (title) + visIdx * 2 + 1 (1-indexed). */
-      const row = top + 3 + visIdx * linesPerChat + tmuxOffset;
+      /** Row offset: border(1) + title(1) + spacer(1) + 1-indexed(1) = 4; modern shifts up 2. */
+      const rowBase = isModern ? 3 : 4;
+      const row = top + rowBase + visIdx * linesPerChat + tmuxOffset;
       images.push({ seq, row, col: AVATAR_COL });
     });
 
-    /* Build fingerprint from avatars, positions, and tmux offset. */
-    const imageKey = visible
-      .map((c, i) => `${c.avatarPath ?? ""}:${String(top + 3 + i * linesPerChat + tmuxOffset)}`)
-      .join("|");
+    /* Build fingerprint from avatars, positions, dimensions, and tmux offset. */
+    const imageKey =
+      `${String(width)}x${String(height)}|` +
+      visible
+        .map(
+          (c, i) =>
+            `${c.avatarPath ?? ""}:${String(top + (isModern ? 3 : 4) + i * linesPerChat + tmuxOffset)}`,
+        )
+        .join("|");
 
     /* Skip if nothing changed (prevents flicker on cursor navigation). */
     if (imageKey === prevImageKeyRef.current) {
@@ -172,7 +177,7 @@ export const ChatsPanel = React.memo(function ChatsPanel({
     deleteAllImages();
     writeImageOverlays(images);
     /* v8 ignore stop */
-  }, [visible, top, clampedOffset, paneVis, linesPerChat, isComfortable]);
+  }, [visible, top, clampedOffset, paneVis, linesPerChat, isComfortable, isModern, width, height]);
 
   /* v8 ignore start -- cleanup only reachable with real Kitty terminal */
   /* Clean up Kitty images when the component unmounts. */
@@ -190,9 +195,9 @@ export const ChatsPanel = React.memo(function ChatsPanel({
       flexDirection="column"
       width={width}
       height={height}
-      border={!isModern}
-      borderStyle={isModern ? undefined : "rounded"}
-      borderColor={isModern ? undefined : borderColor}
+      border={true}
+      borderStyle="single"
+      borderColor={isModern ? (focused ? theme.borderActive : theme.backgroundPanel) : borderColor}
       backgroundColor={isModern ? theme.backgroundPanel : undefined}
     >
       <text attributes={TextAttributes.BOLD} fg={theme.primary}>
@@ -266,8 +271,11 @@ function ChatEntry({
   const timeStr = relativeTime(chat.lastMessageTime);
   const avatar = chatAvatar(chat.name);
 
-  /* Avatar badge width: 2 cols for compact (square on 1 row), 6 cols for comfortable (square on 3 rows). */
+  /* Avatar badge width: 2 cols for compact (square on 1 row), 7 cols for comfortable (square on 3 rows). */
   const avatarWidth = isComfortable ? AVATAR_COLS_COMFORTABLE : AVATAR_COLS_COMPACT;
+
+  /** When avatar width is odd, prefix initials with "-" so 3-char string centers evenly. */
+  const displayInitials = avatarWidth % 2 !== 0 ? `-${avatar.initials}` : avatar.initials;
 
   /** Characters consumed by prefix (3) + avatar + space (1). */
   const fixedCols = 3 + avatarWidth + 1;
@@ -297,12 +305,12 @@ function ChatEntry({
   const avatarSpacer = " ".repeat(avatarWidth + 1);
 
   if (isComfortable) {
-    /** Comfortable: 3 lines. Avatar block is 6-wide x 3-tall square. Initials on line 2. */
+    /** Comfortable: 3 content lines + spacer. Avatar block is 7-wide x 3-tall. */
     const maxPreview = Math.max(innerWidth - fixedCols, 4);
     const preview = truncate(chat.lastMessage, maxPreview);
-    /** Pad initials to fill the avatar width (e.g. " AL " for 6-wide becomes "  AL  "). */
-    const initialsStr = avatar.initials
-      .padStart(Math.floor((avatarWidth + avatar.initials.length) / 2))
+    /** Pad initials to fill the avatar width (e.g. "-AL" for 7-wide becomes "  -AL  "). */
+    const initialsStr = displayInitials
+      .padStart(Math.floor((avatarWidth + displayInitials.length) / 2))
       .padEnd(avatarWidth);
 
     return (
@@ -352,7 +360,7 @@ function ChatEntry({
       <text>
         <span fg={isSelected && focused ? theme.primary : theme.textMuted}>{prefix}</span>
         <span bg={avatar.color} fg="#1e1e2e" attributes={TextAttributes.BOLD}>
-          {avatar.initials}
+          {displayInitials}
         </span>
         <span> </span>
         <span fg={nameColor} attributes={nameBold ? TextAttributes.BOLD : undefined}>

@@ -63,19 +63,19 @@ describe("calculateLayout", () => {
   });
 
   describe("messages and input height", () => {
-    it("sets input height to 5 for normal terminals", () => {
+    it("sets input height to 6 for normal terminals", () => {
       const layout = calculateLayout(100, 40);
-      expect(layout.inputHeight).toBe(5);
+      expect(layout.inputHeight).toBe(6);
     });
 
     it("calculates messagesHeight as usableHeight minus inputHeight", () => {
       const layout = calculateLayout(100, 40);
-      // usableHeight = 39, messagesHeight = 39 - 5 = 34
-      expect(layout.messagesHeight).toBe(34);
+      // usableHeight = 39, messagesHeight = 39 - 6 = 33
+      expect(layout.messagesHeight).toBe(33);
     });
 
     it("enforces minimum messagesHeight of 3 and adjusts inputHeight", () => {
-      // usableHeight = 6 - 1 = 5, messagesHeight = 5 - 5 = 0 < 3
+      // usableHeight = 6 - 1 = 5, messagesHeight = 5 - 6 = -1 < 3
       // so messagesHeight = 3, inputHeight = 5 - 3 = 2 < 3, so inputHeight = 3
       const layout = calculateLayout(100, 6);
       expect(layout.messagesHeight).toBe(3);
@@ -83,21 +83,21 @@ describe("calculateLayout", () => {
     });
 
     it("adjusts inputHeight when messagesHeight is forced to minimum", () => {
-      // usableHeight = 10 - 1 = 9, messagesHeight = 9 - 5 = 4 >= 3
+      // usableHeight = 10 - 1 = 9, messagesHeight = 9 - 6 = 3 >= 3
       const layout = calculateLayout(100, 10);
-      expect(layout.messagesHeight).toBe(4);
-      expect(layout.inputHeight).toBe(5);
+      expect(layout.messagesHeight).toBe(3);
+      expect(layout.inputHeight).toBe(6);
     });
 
     it("handles messagesHeight exactly at minimum boundary", () => {
-      // usableHeight = 9 - 1 = 8, messagesHeight = 8 - 5 = 3, exactly at min
-      const layout = calculateLayout(100, 9);
+      // usableHeight = 10 - 1 = 9, messagesHeight = 9 - 6 = 3, exactly at min
+      const layout = calculateLayout(100, 10);
       expect(layout.messagesHeight).toBe(3);
-      expect(layout.inputHeight).toBe(5);
+      expect(layout.inputHeight).toBe(6);
     });
 
     it("recalculates inputHeight from usableHeight when messages clamped", () => {
-      // usableHeight = 8 - 1 = 7, messagesHeight = 7 - 5 = 2 < 3
+      // usableHeight = 8 - 1 = 7, messagesHeight = 7 - 6 = 1 < 3
       // messagesHeight = 3, inputHeight = 7 - 3 = 4 >= 3
       const layout = calculateLayout(100, 8);
       expect(layout.messagesHeight).toBe(3);

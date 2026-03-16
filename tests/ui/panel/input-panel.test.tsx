@@ -133,4 +133,36 @@ describe("InputPanel", () => {
     );
     expect(rendered.lastFrame()).toContain("Hello");
   });
+
+  it("renders scrollbar in retro style when value exceeds content lines", async () => {
+    const multiline = "line1\nline2\nline3\nline4\nline5\nline6";
+    const rendered = await render(
+      <RetroInputPanel
+        focused={false}
+        width={40}
+        height={5}
+        value={multiline}
+        onInput={() => {}}
+        onSubmit={() => {}}
+      />,
+    );
+    const frame = rendered.lastFrame();
+    expect(frame).toContain("\u2588");
+  });
+
+  it("renders scrollbar in modern style when value exceeds content lines", async () => {
+    const multiline = "line1\nline2\nline3\nline4\nline5\nline6";
+    const rendered = await render(
+      <ModernInputPanel
+        focused={false}
+        width={40}
+        height={5}
+        value={multiline}
+        onInput={() => {}}
+        onSubmit={() => {}}
+      />,
+    );
+    const frame = rendered.lastFrame();
+    expect(frame).toContain("\u2588");
+  });
 });

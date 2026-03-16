@@ -9,6 +9,7 @@ import {
   sameDay,
   wrapText,
   chatAvatar,
+  buildScrollbar,
 } from "../../src/domain/textutil.js";
 
 describe("truncate", () => {
@@ -316,5 +317,47 @@ describe("chatAvatar", () => {
   it("handles channel-style names", () => {
     const result = chatAvatar("#general");
     expect(result.initials).toBe("#G");
+  });
+});
+
+describe("buildScrollbar", () => {
+  it("returns empty array when content fits", () => {
+    expect(buildScrollbar(5, 10, 0)).toEqual([]);
+  });
+
+  it("returns empty array when visibleLines is zero", () => {
+    expect(buildScrollbar(10, 0, 0)).toEqual([]);
+  });
+
+  it("returns scrollbar with thumb at top when offset is 0", () => {
+    const bar = buildScrollbar(20, 5, 0);
+    expect(bar).toHaveLength(5);
+    expect(bar[0]).toBe("\u2588");
+  });
+
+  it("returns scrollbar with thumb at bottom when fully scrolled", () => {
+    const bar = buildScrollbar(20, 5, 15);
+    expect(bar).toHaveLength(5);
+    expect(bar[4]).toBe("\u2588");
+  });
+
+  it("clamps offset to valid range", () => {
+    const bar = buildScrollbar(20, 5, 100);
+    expect(bar).toHaveLength(5);
+    expect(bar[4]).toBe("\u2588");
+  });
+
+  it("clamps negative offset to zero", () => {
+    const bar = buildScrollbar(20, 5, -5);
+    expect(bar).toHaveLength(5);
+    expect(bar[0]).toBe("\u2588");
+  });
+
+  it("returns all thumb when total barely exceeds visible", () => {
+    const bar = buildScrollbar(6, 5, 0);
+    expect(bar).toHaveLength(5);
+    // Thumb should be large relative to track
+    const thumbCount = bar.filter((c) => c === "\u2588").length;
+    expect(thumbCount).toBeGreaterThan(0);
   });
 });

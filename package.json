@@ -15,7 +15,9 @@
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
     "check": "bun run lint && bun run test && bun run build",
-    "clean": "rm -rf dist"
+    "clean": "rm -rf dist dist-web",
+    "build:web": "bun run scripts/build-web.ts",
+    "serve:web": "bun run scripts/build-web.ts && cd dist-web && bunx serve -l 3000"
   },
   "dependencies": {
     "@opentui/core": "latest",
@@ -24,6 +26,7 @@
     "smol-toml": "^1.6.0"
   },
   "devDependencies": {
+    "@playwright/test": "^1.58.2",
     "@types/node": "^25.5.0",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
