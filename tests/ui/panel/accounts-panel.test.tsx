@@ -262,9 +262,16 @@ describe("AccountsPanel", () => {
     expect(frame).toContain("\u2514");
   });
 
-  it("renders modern style without borders", async () => {
+  it("renders modern style with hidden border when unfocused", async () => {
     const rendered = await render(
       <AccountsPanel accounts={mockAccounts} focused={false} width={30} height={10} cursor={0} />,
+    );
+    expect(rendered.lastFrame()).toContain("Accounts");
+  });
+
+  it("renders modern style with active border when focused", async () => {
+    const rendered = await render(
+      <AccountsPanel accounts={mockAccounts} focused={true} width={30} height={10} cursor={0} />,
     );
     expect(rendered.lastFrame()).toContain("Accounts");
   });

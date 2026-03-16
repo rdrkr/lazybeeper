@@ -10,7 +10,7 @@ const SIDEBAR_MAX_WIDTH = 40;
 const SIDEBAR_PCT = 30;
 
 /** Fixed height for the input panel. */
-const INPUT_HEIGHT = 5;
+const INPUT_HEIGHT = 6;
 
 /** Fixed height for the status bar. */
 const STATUS_BAR_HEIGHT = 1;

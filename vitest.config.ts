@@ -39,6 +39,7 @@ export default defineConfig({
         "src/ui/app.tsx",
         "src/ui/theme/types.ts",
         "src/**/*.d.ts",
+        "src/web/**",
       ],
       thresholds: {
         statements: 100,

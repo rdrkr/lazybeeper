@@ -294,7 +294,7 @@ export function App({
 
       if (isEscapeKey(key)) {
         setActiveTheme(savedTheme);
-        dispatch({ type: "close_popup" });
+        dispatch({ type: "close_theme" });
       } else if (isEnterKey(key)) {
         const selected = getThemeAtCursor(themeCursor);
         if (selected) {
@@ -624,6 +624,19 @@ export function App({
         dispatch({ type: "set_focus", focus: PanelFocus.Messages });
         return;
       }
+      if (isInterruptKey(key)) {
+        const now = Date.now();
+        if (now - lastInterruptRef.current < INTERRUPT_WINDOW_MS) {
+          onQuit();
+        }
+        lastInterruptRef.current = now;
+        dispatch({
+          type: "error",
+          error: "Press Ctrl-C again to quit",
+          duration: INTERRUPT_WINDOW_MS,
+        });
+        return;
+      }
       if (isTabKey(key) || isShiftTabKey(key)) {
         if (key.shift) {
           goPrevPanel();
@@ -866,55 +879,59 @@ export function App({
   return (
     <ThemeProvider value={activeTheme}>
       <StyleProvider value={activeStyle}>
-        <box flexDirection="column" width={layout.totalWidth} height={layout.totalHeight}>
+        <box
+          flexDirection="column"
+          width={layout.totalWidth}
+          height={layout.totalHeight}
+          backgroundColor={isModern ? activeTheme.background : undefined}
+        >
           <box flexDirection="row">
             {/* Sidebar */}
             <box
               flexDirection="column"
-              width={isModern ? layout.sidebarWidth - 1 : layout.sidebarWidth}
+              width={isModern ? layout.sidebarWidth - 2 : layout.sidebarWidth}
             >
               <AccountsPanel
                 accounts={state.accounts}
                 focused={state.focus === PanelFocus.Accounts}
-                width={isModern ? layout.sidebarWidth - 1 : layout.sidebarWidth}
-                height={isModern ? layout.accountsHeight - 1 : layout.accountsHeight}
+                width={isModern ? layout.sidebarWidth - 2 : layout.sidebarWidth}
+                height={isModern ? layout.accountsHeight - 2 : layout.accountsHeight}
                 cursor={accountsCursor}
               />
               {isModern && <box height={1} />}
               <ChatsPanel
                 chats={state.chats}
                 focused={state.focus === PanelFocus.Chats}
-                width={isModern ? layout.sidebarWidth - 1 : layout.sidebarWidth}
-                height={isModern ? layout.chatsHeight - 1 : layout.chatsHeight}
+                width={isModern ? layout.sidebarWidth - 2 : layout.sidebarWidth}
+                height={isModern ? layout.chatsHeight : layout.chatsHeight}
                 cursor={chatsCursor}
                 top={isModern ? layout.accountsHeight : layout.accountsHeight}
                 chatListStyle={chatListStyle}
               />
             </box>
-            {isModern && <box width={1} />}
+            <box width={isModern ? 2 : 1} />
             {/* Main area */}
-            <box flexDirection="column" width={isModern ? layout.mainWidth - 1 : layout.mainWidth}>
+            <box flexDirection="column" width={isModern ? layout.mainWidth - 2 : layout.mainWidth}>
               <MessagesPanel
                 messages={state.messages}
                 chatName={state.activeChatName}
                 focused={state.focus === PanelFocus.Messages}
-                width={isModern ? layout.mainWidth - 1 : layout.mainWidth}
-                height={
-                  isModern ? layout.messagesHeight + layout.inputHeight - 4 : layout.messagesHeight
-                }
+                width={isModern ? layout.mainWidth - 2 : layout.mainWidth}
+                height={isModern ? layout.messagesHeight - 2 : layout.messagesHeight}
                 scrollOffset={messagesScroll}
               />
               {isModern && <box height={1} />}
               <InputPanel
                 focused={state.focus === PanelFocus.Input}
-                width={isModern ? layout.mainWidth - 1 : layout.mainWidth}
-                height={isModern ? 3 : layout.inputHeight}
+                width={isModern ? layout.mainWidth - 2 : layout.mainWidth}
+                height={isModern ? layout.inputHeight : layout.inputHeight}
                 value={inputValue}
                 onInput={setInputValue}
                 onSubmit={handleSendMessage}
               />
             </box>
           </box>
+          {isModern && <box height={1} />}
           <StatusBar
             width={layout.totalWidth}
             focus={state.focus}

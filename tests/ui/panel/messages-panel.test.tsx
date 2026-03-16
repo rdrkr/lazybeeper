@@ -248,7 +248,7 @@ describe("MessagesPanel", () => {
     expect(frame).toContain("I'm good, thanks!");
   });
 
-  it("renders modern style without borders", async () => {
+  it("renders modern style with hidden border when unfocused", async () => {
     const rendered = await render(
       <ModernMessagesPanel
         messages={[]}
@@ -260,6 +260,20 @@ describe("MessagesPanel", () => {
       />,
     );
     expect(rendered.lastFrame()).toContain("Messages");
+  });
+
+  it("renders modern style with active border when focused", async () => {
+    const rendered = await render(
+      <ModernMessagesPanel
+        messages={mockMessages}
+        chatName="Alice"
+        focused={true}
+        width={60}
+        height={20}
+        scrollOffset={0}
+      />,
+    );
+    expect(rendered.lastFrame()).toContain("Alice");
   });
 
   it("renders messages across different days", async () => {

@@ -354,7 +354,7 @@ describe("ChatsPanel", () => {
     expect(frame).toContain("Alice");
   });
 
-  it("renders modern style without borders", async () => {
+  it("renders modern style with hidden border when unfocused", async () => {
     const rendered = await render(
       <ChatsPanel
         chats={mockChats}
@@ -369,5 +369,21 @@ describe("ChatsPanel", () => {
     const frame = rendered.lastFrame();
     expect(frame).toContain("Chats");
     expect(frame).toContain("Alice");
+  });
+
+  it("renders modern style with active border when focused", async () => {
+    const rendered = await render(
+      <ChatsPanel
+        chats={mockChats}
+        focused={true}
+        width={30}
+        height={20}
+        cursor={0}
+        top={0}
+        chatListStyle={ChatListStyle.Compact}
+      />,
+    );
+    const frame = rendered.lastFrame();
+    expect(frame).toContain("Chats");
   });
 });

@@ -1,4 +1,4 @@
-# Copyright (c) 2025 Affilibuster by Ronen Druker.
+# Copyright (c) 2026 lazybeeper by Ronen Druker.
 
 *.jpg filter=lfs diff=lfs merge=lfs -text
 *.jpeg filter=lfs diff=lfs merge=lfs -text

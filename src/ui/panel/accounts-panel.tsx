@@ -38,7 +38,7 @@ export const AccountsPanel = React.memo(function AccountsPanel({
   const isModern = style === Style.Modern;
   const [offset, setOffset] = useState(0);
 
-  const innerHeight = Math.max(height - (isModern ? 0 : 2), 0);
+  const innerHeight = Math.max(height - 2, 0);
   const titleLines = 1;
   let usableSlots = innerHeight - titleLines;
 
@@ -65,9 +65,9 @@ export const AccountsPanel = React.memo(function AccountsPanel({
       flexDirection="column"
       width={width}
       height={height}
-      border={!isModern}
-      borderStyle={isModern ? undefined : "rounded"}
-      borderColor={isModern ? undefined : borderColor}
+      border={true}
+      borderStyle="single"
+      borderColor={isModern ? (focused ? theme.borderActive : theme.backgroundPanel) : borderColor}
       backgroundColor={isModern ? theme.backgroundPanel : undefined}
     >
       <text attributes={TextAttributes.BOLD} fg={theme.primary}>

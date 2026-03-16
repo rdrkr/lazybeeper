@@ -422,11 +422,16 @@ describe("appReducer", () => {
   });
 
   describe("show_theme", () => {
-    it("activates theme popup, sets focus to Popup, saves prevFocus", () => {
-      const state = { ...createInitialState(false), focus: PanelFocus.Chats };
+    it("activates theme popup, sets focus to Popup, preserves prevFocus", () => {
+      const state = {
+        ...createInitialState(false),
+        focus: PanelFocus.Popup,
+        prevFocus: PanelFocus.Chats,
+      };
       const result = appReducer(state, { type: "show_theme" });
       expect(result.activePopup).toBe(PopupType.Theme);
       expect(result.focus).toBe(PanelFocus.Popup);
+      /* prevFocus is preserved from config popup so closing config restores the right panel. */
       expect(result.prevFocus).toBe(PanelFocus.Chats);
     });
   });
@@ -442,7 +447,7 @@ describe("appReducer", () => {
   });
 
   describe("theme_selected", () => {
-    it("closes popup and restores previous focus", () => {
+    it("returns to config popup after theme selection", () => {
       const state = {
         ...createInitialState(false),
         activePopup: PopupType.Theme as const,
@@ -453,8 +458,22 @@ describe("appReducer", () => {
         type: "theme_selected",
         themeName: "dracula",
       });
-      expect(result.activePopup).toBeNull();
-      expect(result.focus).toBe(PanelFocus.Messages);
+      expect(result.activePopup).toBe(PopupType.Config);
+      expect(result.focus).toBe(PanelFocus.Popup);
+    });
+  });
+
+  describe("close_theme", () => {
+    it("returns to config popup on theme escape", () => {
+      const state = {
+        ...createInitialState(false),
+        activePopup: PopupType.Theme as const,
+        focus: PanelFocus.Popup,
+        prevFocus: PanelFocus.Messages,
+      };
+      const result = appReducer(state, { type: "close_theme" });
+      expect(result.activePopup).toBe(PopupType.Config);
+      expect(result.focus).toBe(PanelFocus.Popup);
     });
   });
 

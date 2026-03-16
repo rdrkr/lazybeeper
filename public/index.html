@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>lazybeeper</title>
+    <style>
+      :root {
+        --tui-font: "JetBrains Mono", "Fira Code", "SF Mono", "Cascadia Code",
+          "Source Code Pro", ui-monospace, Menlo, Monaco, Consolas, monospace;
+        --tui-font-size: 14px;
+        --tui-line-height: 1.15;
+        --cell-h: 16px; /* round(14px * 1.15 = 16px) — whole pixels prevent sub-pixel gaps */
+        --tui-border: #45475a;
+      }
+
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      html,
+      body {
+        height: 100%;
+        overflow: hidden;
+        background: var(--tui-bg, #1e1e2e);
+        color: var(--tui-fg, #cdd6f4);
+        font-family: var(--tui-font);
+        font-size: var(--tui-font-size);
+        line-height: var(--cell-h);
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+      }
+
+      #root {
+        height: 100vh;
+        width: 100%;
+        overflow: hidden;
+        position: relative;
+      }
+
+      /* The outermost app box must fill the available space within padding. */
+      #root > div {
+        height: calc(100vh - 2 * var(--tui-app-padding, 0px)) !important;
+        max-height: calc(100vh - 2 * var(--tui-app-padding, 0px));
+        margin: var(--tui-app-padding, 0px);
+      }
+
+      /* TUI element base styles */
+      .tui-box {
+        overflow: hidden;
+        gap: 0;
+      }
+
+      .tui-text {
+        white-space: pre;
+        overflow: hidden;
+        text-overflow: clip;
+        height: var(--cell-h);
+        line-height: var(--cell-h);
+        flex-shrink: 0;
+        margin: 0;
+        padding: 0;
+      }
+
+      .tui-span {
+        line-height: var(--cell-h);
+        vertical-align: top;
+      }
+
+      .tui-input {
+        caret-color: var(--tui-fg, #cdd6f4);
+        line-height: var(--cell-h);
+      }
+
+      input.tui-input {
+        height: var(--cell-h);
+      }
+
+      .tui-input::placeholder {
+        color: #585b70;
+      }
+
+      /* Scrollbar styling */
+      ::-webkit-scrollbar {
+        width: 6px;
+        height: 6px;
+      }
+
+      ::-webkit-scrollbar-track {
+        background: transparent;
+      }
+
+      ::-webkit-scrollbar-thumb {
+        background: #45475a;
+        border-radius: 3px;
+      }
+
+      ::-webkit-scrollbar-thumb:hover {
+        background: #585b70;
+      }
+
+      /* Popup backdrop covers the full viewport including padding. */
+      .tui-popup-backdrop {
+        position: fixed !important;
+        top: 0 !important;
+        left: 0 !important;
+        width: 100vw !important;
+        height: 100vh !important;
+      }
+
+      /* Selection styling */
+      ::selection {
+        background: #45475a;
+        color: #cdd6f4;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="./entry.js"></script>
+  </body>
+</html>
